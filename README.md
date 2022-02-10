@@ -1,6 +1,6 @@
 # ls-proxy [![Build Badge]](https://gitlab.com/MysteryBlokHed/ls-proxy/-/pipelines) [![NPM Badge]](https://www.npmjs.com/package/ls-proxy) [![License Badge]](#license)
 
-Wrap localStorage to modify it by changing an object.
+Wraps localStorage to easily store any value.
 
 ## Documentation
 

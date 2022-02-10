@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ls-proxy
-// @descripton  Wrap localStorage to modify it by changing an object
+// @descripton  Wraps localStorage to easily store any value
 // @version     0.1.0
 // @author      Adam Thompson-Sharpe
 // @license     MIT
