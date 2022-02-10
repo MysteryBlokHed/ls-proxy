@@ -69,6 +69,25 @@ const defaultJsonProxyConfig = ({
  * myPerson.name = 'Joe' // Updates localStorage
  * console.log(myPerson.name) // Checks localStorage if checkGets is true
  * ```
+ *
+ * @example
+ * ```typescript
+ * // Validating that the expected keys exist and are the correct type
+ * const myObj = jsonProxy(
+ *   'myObj',
+ *   {
+ *     someString: 'string',
+ *     someNumber: 42,
+ *   },
+ *   {
+ *     validate(value) {
+ *       if (typeof value.someString !== 'string') return false
+ *       if (typeof value.someNumber !== 'number') return false
+ *       return true
+ *     },
+ *   },
+ * )
+ * ```
  */
 export function jsonProxy<
   Keys extends string = string,

@@ -52,6 +52,25 @@ export interface JsonProxyConfig {
  * myPerson.name = 'Joe' // Updates localStorage
  * console.log(myPerson.name) // Checks localStorage if checkGets is true
  * ```
+ *
+ * @example
+ * ```typescript
+ * // Validating that the expected keys exist and are the correct type
+ * const myObj = jsonProxy(
+ *   'myObj',
+ *   {
+ *     someString: 'string',
+ *     someNumber: 42,
+ *   },
+ *   {
+ *     validate(value) {
+ *       if (typeof value.someString !== 'string') return false
+ *       if (typeof value.someNumber !== 'number') return false
+ *       return true
+ *     },
+ *   },
+ * )
+ * ```
  */
 export declare function jsonProxy<Keys extends string = string, Object extends Record<Keys, any> = Record<Keys, any>>(lsKey: string, defaults: Readonly<Object>, configuration?: JsonProxyConfig): Object;
 /** Configuration for keyProxy */
