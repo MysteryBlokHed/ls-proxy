@@ -102,8 +102,9 @@ export function keyProxy<
   if (setDefaults) {
     for (const [key, value] of Object.entries(defaults) as [Keys, string][]) {
       const keyPrefix = addId(key, id)
-      if (!localStorage[keyPrefix]) localStorage[keyPrefix] = value
-      else object[key] = localStorage[keyPrefix]
+      if (!localStorage[keyPrefix]) {
+        if (setDefaults) localStorage[keyPrefix] = value
+      } else object[key] = localStorage[keyPrefix]
     }
   }
 
