@@ -26,7 +26,7 @@ const banner = genBanner({
  * const { hello } = LibraryName
  * hello()
  */
-const vanillaLibraryName = 'LibraryName'
+const vanillaLibraryName = 'LSProxy'
 
 /** The name of the generated Userscript file */
 const outFile = `${package.name}.user.js`

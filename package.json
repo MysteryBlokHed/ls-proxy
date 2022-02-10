@@ -1,10 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/package",
-  "name": "webpack-ts-userscript-library",
+  "name": "ls-proxy",
   "version": "0.1.0",
-  "description": "A template to create UserScript libraries using TypeScript and Webpack.",
-  "repository": "https://gitlab.com/MysteryBlokHed/webpack-ts-userscript-library",
-  "homepage": "https://gitlab.com/MysteryBlokHed/webpack-ts-userscript-library",
+  "description": "Wrap localStorage to modify it by changing an object",
+  "repository": "https://gitlab.com/MysteryBlokHed/ls-proxy",
+  "homepage": "https://gitlab.com/MysteryBlokHed/ls-proxy",
   "author": "Adam Thompson-Sharpe",
   "license": "MIT",
   "files": [
