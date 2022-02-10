@@ -1,6 +1,6 @@
 const { readFile, appendFile } = require('fs')
 const root = require('path').dirname(
-  require.main.filename || process.mainModule.filename
+  require.main.filename || process.mainModule.filename,
 )
 const vanillaLibraryName = require('./webpack.config').output.library
 
