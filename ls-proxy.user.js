@@ -21,7 +21,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.keyProxy = exports.jsonProxy = void 0;
 const defaultJsonProxyConfig = ({ setDefault, checkGets, parse, stringify, }) => {
     return {
-        setDefault: setDefault !== null && setDefault !== void 0 ? setDefault : true,
+        setDefault: setDefault !== null && setDefault !== void 0 ? setDefault : false,
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
         parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
         stringify: stringify !== null && stringify !== void 0 ? stringify : JSON.stringify,

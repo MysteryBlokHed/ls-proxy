@@ -31,7 +31,7 @@ const defaultJsonProxyConfig = ({
   stringify,
 }: JsonProxyConfig): Required<JsonProxyConfig> => {
   return {
-    setDefault: setDefault ?? true,
+    setDefault: setDefault ?? false,
     checkGets: checkGets ?? true,
     parse: parse ?? JSON.parse,
     stringify: stringify ?? JSON.stringify,
