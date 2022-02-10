@@ -2,6 +2,74 @@
 
 Wrap localStorage to modify it by changing an object.
 
+## Use
+
+### In a Node project
+
+To use in a Node project, add ls-proxy as a dependency.
+
+```sh
+# npm
+npm install ls-proxy
+
+# yarn
+yarn add ls-proxy
+```
+
+You can then import and use functions:
+
+```javascript
+import { jsonProxy } from 'ls-proxy'
+
+const myObj = jsonProxy('myObj', {
+  name: 'John',
+  age: 21,
+})
+
+myObj.name = 'Joe'
+myObj.age++
+```
+
+### In a normal UserScript
+
+In a UserScript that isn't built with some build tool, you can `@require` the library:
+
+```javascript
+// @require     https://gitlab.com/MysteryBlokHed/ls-proxy/-/raw/main/ls-proxy.user.js
+```
+
+<!-- Make sure that this is true for your project -->
+
+You can replace `main` with a specific release tag like `v0.1.0` to require a specific version:
+
+```javscript
+// @require     https://gitlab.com/MysteryBlokHed/ls-proxy/-/raw/v0.1.0/ls-proxy.user.js
+```
+
+Functions are available on the global `LSProxy` object:
+
+```javascript
+const { jsonProxy } = LSProxy
+
+const myObj = jsonProxy('myObj', {
+  name: 'John',
+  age: 21,
+})
+
+myObj.name = 'Joe'
+myObj.age++
+```
+
+#### Type declarations
+
+The types included with the npm package still work when the library is `@require`'d.
+Just add the types as a dev dependency for a Node project or install them globally.
+With the package installed, include the following reference line somewhere in your TypeScript source file:
+
+```typescript
+/// <reference types="ls-proxy" />
+```
+
 ## Building
 
 ### Setup
@@ -34,10 +102,10 @@ to publish files in the `lib/` directory to npm.
 ## License
 
 This project is licensed under the MIT license
-([LICENSE](https://gitlab.com/MysteryBlokHed/webpack-ts-userscript-library/-/blob/main/LICENSE)
+([LICENSE](https://gitlab.com/MysteryBlokHed/ls-proxy/-/blob/main/LICENSE)
 or <http://opensource.org/licenses/MIT>).
 
-This project was created from [a template](https://gitlab.com/MysteryBlokHed/webpack-ts-userscript-library)
+This project was created from [a template](https://gitlab.com/MysteryBlokHed/ls-proxy)
 licensed under the MIT license
-([LICENSE](https://gitlab.com/MysteryBlokHed/webpack-ts-userscript-library/-/blob/main/LICENSE)
+([LICENSE](https://gitlab.com/MysteryBlokHed/ls-proxy/-/blob/main/LICENSE)
 or <http://opensource.org/licenses/MIT>).
