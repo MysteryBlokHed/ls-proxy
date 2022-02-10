@@ -1,18 +1,21 @@
 /**
  * Get a Proxy that stores a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
- * The object stored in localStorage is **not** checked for validity
+ * The object stored in localStorage is **not** checked for validity by default,
+ * but you can pass an argument with your own function to do so
  *
  * @param lsKey The localStorage key to store the stringified object in
  * @param defaults The default values if the object is not stored
  * @param setDefault Whether or not to immediately store the stringified object in localStorage
  * if it is undefined
  * @param checkGets Whether or not to check localStorage when an object key is retrieved
- * @param replacer Passed to `JSON.stringify` if provided. See `JSON.stringify` docs for more info
- * @param reviver Passed to `JSON.parse` if provided. See `JSON.parse` docs for more info
+ * @param parse Function to parse object. Can be replaced with a custom function
+ * to validate objects before setting/getting. Defaults to `JSON.parse`
+ * @param stringify Function to stringify object. Defaults to `JSON.stringify`
  *
  * @example
  * ```typescript
+ * // No validation
  * import { jsonProxy } from 'ls-proxy'
  *
  * // Stored serialized in localStorage under the key `myObject`
@@ -36,13 +39,9 @@ export function jsonProxy<
   defaults: Readonly<Object>,
   setDefault = true,
   checkGets = true,
-  replacer?: Parameters<typeof JSON['stringify']>[1],
-  reviver?: Parameters<typeof JSON['parse']>[1],
+  parse: (value: string) => Object = JSON.parse,
+  stringify: (value: any) => string = JSON.stringify,
 ): Object {
-  // Automatically pass replacer/reviver to JSON functions
-  const stringify = (value: any) => JSON.stringify(value, replacer)
-  const parse = (value: string) => JSON.parse(value, reviver)
-
   let object = { ...defaults } as Object
 
   // Update localStorage value
