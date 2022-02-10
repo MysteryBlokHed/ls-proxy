@@ -53,7 +53,7 @@ export interface JsonProxyConfig {
  */
 export declare function jsonProxy<Keys extends string = string, Object extends Record<Keys, any> = Record<Keys, any>>(lsKey: string, defaults: Readonly<Object>, configuration?: JsonProxyConfig): Object;
 /** Configuration for keyProxy */
-interface KeyProxyConfig {
+export interface KeyProxyConfig {
     /**
      * Whether or not to set the defaults in localStorage if they are not defined
      * @default false
@@ -87,6 +87,5 @@ interface KeyProxyConfig {
  * ```
  */
 export declare function keyProxy<Keys extends string = string, Object extends Record<Keys, string> = Record<Keys, string>>(defaults: Readonly<Object>, id?: string, configuration?: KeyProxyConfig): Object;
-export {};
 
 export as namespace LSProxy;

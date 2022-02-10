@@ -103,7 +103,7 @@ export function jsonProxy<
 }
 
 /** Configuration for keyProxy */
-interface KeyProxyConfig {
+export interface KeyProxyConfig {
   /**
    * Whether or not to set the defaults in localStorage if they are not defined
    * @default false
