@@ -1,4 +1,4 @@
-# ls-proxy
+# ls-proxy [![Build Badge]](https://gitlab.com/MysteryBlokHed/ls-proxy/-/pipelines) [![NPM Badge]](https://www.npmjs.com/package/ls-proxy) [![License Badge]](#license)
 
 Wrap localStorage to modify it by changing an object.
 
@@ -114,3 +114,7 @@ This project was created from [a template](https://gitlab.com/MysteryBlokHed/ls-
 licensed under the MIT license
 ([LICENSE](https://gitlab.com/MysteryBlokHed/ls-proxy/-/blob/main/LICENSE)
 or <http://opensource.org/licenses/MIT>).
+
+[build badge]: https://img.shields.io/gitlab/pipeline-status/MysteryBlokHed/ls-proxy
+[npm badge]: https://img.shields.io/npm/v/ls-proxy
+[license badge]: https://img.shields.io/badge/license-MIT-green
