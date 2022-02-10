@@ -47,7 +47,7 @@ In a UserScript that isn't built with some build tool, you can `@require` the li
 
 You can replace `main` with a specific release tag like `v0.1.0` to require a specific version:
 
-```javscript
+```javascript
 // @require     https://gitlab.com/MysteryBlokHed/ls-proxy/-/raw/v0.1.0/ls-proxy.user.js
 ```
 
