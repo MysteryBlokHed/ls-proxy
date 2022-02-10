@@ -2,6 +2,11 @@
 
 Wrap localStorage to modify it by changing an object.
 
+## Documentation
+
+Documentation for the main branch is hosted at <https://ls-proxy.adamts.me>.
+Documentation can be built from a cloned repository by running `yarn doc`.
+
 ## Use
 
 ### In a Node project
