@@ -1,5 +1,5 @@
 /** Configuration for jsonProxy */
-export interface JsonProxyConfig {
+export interface JsonProxyConfig<Object extends Record<string, any>> {
   /**
    * Whether or not to immediately store the stringified object in localStorage
    * if it is undefined
@@ -24,12 +24,12 @@ export interface JsonProxyConfig {
   stringify?: (value: any) => string
 }
 
-const defaultJsonProxyConfig = ({
+const defaultJsonProxyConfig = <Object extends Record<string, string>>({
   setDefault,
   checkGets,
   parse,
   stringify,
-}: JsonProxyConfig): Required<JsonProxyConfig> => {
+}: JsonProxyConfig<Object>): Required<JsonProxyConfig<Object>> => {
   return {
     setDefault: setDefault ?? false,
     checkGets: checkGets ?? true,
@@ -72,7 +72,7 @@ export function jsonProxy<
 >(
   lsKey: string,
   defaults: Readonly<Object>,
-  configuration: JsonProxyConfig = {},
+  configuration: JsonProxyConfig<Object> = {},
 ): Object {
   const { setDefault, checkGets, parse, stringify } =
     defaultJsonProxyConfig(configuration)
@@ -82,7 +82,7 @@ export function jsonProxy<
   // Update localStorage value
   if (setDefault && !localStorage[lsKey])
     localStorage[lsKey] = stringify(defaults)
-  else object = JSON.parse(localStorage[lsKey])
+  else object = parse(localStorage[lsKey])
 
   return new Proxy(object, {
     set(target, key: Keys, value: string, receiver) {
@@ -94,8 +94,7 @@ export function jsonProxy<
 
     get(target, key: Keys, receiver) {
       if (checkGets)
-        // Naturally, TypeScript doesn't believe that `keyof Object` can be a key of `Object`, so cast as any
-        target[key] = (parse(localStorage[lsKey]) as any)[key] ?? defaults[key]
+        target[key] = parse(localStorage[lsKey])[key] ?? defaults[key]
 
       return Reflect.get(target, key, receiver)
     },

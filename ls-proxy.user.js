@@ -62,7 +62,7 @@ function jsonProxy(lsKey, defaults, configuration = {}) {
     if (setDefault && !localStorage[lsKey])
         localStorage[lsKey] = stringify(defaults);
     else
-        object = JSON.parse(localStorage[lsKey]);
+        object = parse(localStorage[lsKey]);
     return new Proxy(object, {
         set(target, key, value, receiver) {
             const setResult = Reflect.set(target, key, value, receiver);
@@ -72,7 +72,6 @@ function jsonProxy(lsKey, defaults, configuration = {}) {
         get(target, key, receiver) {
             var _a;
             if (checkGets)
-                // Naturally, TypeScript doesn't believe that `keyof Object` can be a key of `Object`, so cast as any
                 target[key] = (_a = parse(localStorage[lsKey])[key]) !== null && _a !== void 0 ? _a : defaults[key];
             return Reflect.get(target, key, receiver);
         },
