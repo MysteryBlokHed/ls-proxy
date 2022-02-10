@@ -1,11 +1,5 @@
 /** Configuration for jsonProxy */
-export interface JsonProxyConfig<Object extends Record<string, any>> {
-    /**
-     * Whether or not to immediately store the stringified object in localStorage
-     * if it is undefined
-     * @default true
-     */
-    setDefault?: boolean;
+export interface JsonProxyConfig {
     /**
      * Whether or not to check localStorage when an object key is retrieved
      * @default true
@@ -59,7 +53,7 @@ export interface JsonProxyConfig<Object extends Record<string, any>> {
  * console.log(myPerson.name) // Checks localStorage if checkGets is true
  * ```
  */
-export declare function jsonProxy<Keys extends string = string, Object extends Record<Keys, any> = Record<Keys, any>>(lsKey: string, defaults: Readonly<Object>, configuration?: JsonProxyConfig<Object>): Object;
+export declare function jsonProxy<Keys extends string = string, Object extends Record<Keys, any> = Record<Keys, any>>(lsKey: string, defaults: Readonly<Object>, configuration?: JsonProxyConfig): Object;
 /** Configuration for keyProxy */
 export interface KeyProxyConfig {
     /**

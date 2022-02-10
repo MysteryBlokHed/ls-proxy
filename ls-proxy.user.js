@@ -19,9 +19,8 @@ var exports = __webpack_exports__;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.keyProxy = exports.jsonProxy = void 0;
-const defaultJsonProxyConfig = ({ setDefault, checkGets, validate, parse, stringify, }) => {
+const defaultJsonProxyConfig = ({ checkGets, validate, parse, stringify, }) => {
     return {
-        setDefault: setDefault !== null && setDefault !== void 0 ? setDefault : false,
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
         validate: validate !== null && validate !== void 0 ? validate : (() => true),
         parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
@@ -57,7 +56,7 @@ const defaultJsonProxyConfig = ({ setDefault, checkGets, validate, parse, string
  * ```
  */
 function jsonProxy(lsKey, defaults, configuration = {}) {
-    const { setDefault, checkGets, validate, parse, stringify } = defaultJsonProxyConfig(configuration);
+    const { checkGets, validate, parse, stringify } = defaultJsonProxyConfig(configuration);
     const validOrThrow = (valid, action) => {
         const error = new TypeError(action === 'get'
             ? `Validation failed while parsing ${lsKey} from localStorage`
@@ -88,8 +87,7 @@ function jsonProxy(lsKey, defaults, configuration = {}) {
     let object = Object.assign({}, defaults);
     // Update localStorage value
     if (!localStorage[lsKey]) {
-        if (setDefault)
-            localStorage[lsKey] = checkStringify(defaults);
+        localStorage[lsKey] = checkStringify(defaults);
     }
     else
         object = checkParse(localStorage[lsKey]);

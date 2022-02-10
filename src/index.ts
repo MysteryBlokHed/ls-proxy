@@ -1,11 +1,5 @@
 /** Configuration for jsonProxy */
-export interface JsonProxyConfig<Object extends Record<string, any>> {
-  /**
-   * Whether or not to immediately store the stringified object in localStorage
-   * if it is undefined
-   * @default true
-   */
-  setDefault?: boolean
+export interface JsonProxyConfig {
   /**
    * Whether or not to check localStorage when an object key is retrieved
    * @default true
@@ -34,15 +28,13 @@ export interface JsonProxyConfig<Object extends Record<string, any>> {
   stringify?: (value: any) => string
 }
 
-const defaultJsonProxyConfig = <Object extends Record<string, string>>({
-  setDefault,
+const defaultJsonProxyConfig = ({
   checkGets,
   validate,
   parse,
   stringify,
-}: JsonProxyConfig<Object>): Required<JsonProxyConfig<Object>> => {
+}: JsonProxyConfig): Required<JsonProxyConfig> => {
   return {
-    setDefault: setDefault ?? false,
     checkGets: checkGets ?? true,
     validate: validate ?? (() => true),
     parse: parse ?? JSON.parse,
@@ -84,13 +76,13 @@ export function jsonProxy<
 >(
   lsKey: string,
   defaults: Readonly<Object>,
-  configuration: JsonProxyConfig<Object> = {},
+  configuration: JsonProxyConfig = {},
 ): Object {
-  const { setDefault, checkGets, validate, parse, stringify } =
+  const { checkGets, validate, parse, stringify } =
     defaultJsonProxyConfig(configuration)
 
   const validOrThrow = (
-    valid: ReturnType<Required<JsonProxyConfig<Object>>['validate']>,
+    valid: ReturnType<Required<JsonProxyConfig>['validate']>,
     action: 'get' | 'set',
   ) => {
     const error = new TypeError(
@@ -125,7 +117,7 @@ export function jsonProxy<
 
   // Update localStorage value
   if (!localStorage[lsKey]) {
-    if (setDefault) localStorage[lsKey] = checkStringify(defaults)
+    localStorage[lsKey] = checkStringify(defaults)
   } else object = checkParse(localStorage[lsKey])
 
   return new Proxy(object, {
