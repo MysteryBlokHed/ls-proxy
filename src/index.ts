@@ -80,9 +80,9 @@ export function jsonProxy<
   let object = { ...defaults } as Object
 
   // Update localStorage value
-  if (setDefault && !localStorage[lsKey])
-    localStorage[lsKey] = stringify(defaults)
-  else object = parse(localStorage[lsKey])
+  if (!localStorage[lsKey]) {
+    if (setDefault) localStorage[lsKey] = stringify(defaults)
+  } else object = parse(localStorage[lsKey])
 
   return new Proxy(object, {
     set(target, key: Keys, value: string, receiver) {
