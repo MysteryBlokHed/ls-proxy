@@ -12,11 +12,21 @@ export interface JsonProxyConfig<Object extends Record<string, any>> {
    */
   checkGets?: boolean
   /**
+   * Validate an object before setting it in localStorage or reading it.
+   * Should return true if an object is valid or false otherwise.
+   * If the return is false, a TypeError will be thrown from the Proxy
+   * @returns Either a boolean or false and an error to throw
+   * @default () => true
+   */
+  validate?: (
+    value: any,
+  ) => boolean | readonly [boolean] | readonly [false, Error]
+  /**
    * Function to parse object. Can be replaced with a custom function
    * to validate objects before setting/getting. Defaults to `JSON.parse`
    * @default JSON.parse
    */
-  parse?: (value: string) => Object
+  parse?: (value: string) => any
   /**
    * Function to stringify object. Defaults to `JSON.stringify`
    * @default JSON.stringify
@@ -27,12 +37,14 @@ export interface JsonProxyConfig<Object extends Record<string, any>> {
 const defaultJsonProxyConfig = <Object extends Record<string, string>>({
   setDefault,
   checkGets,
+  validate,
   parse,
   stringify,
 }: JsonProxyConfig<Object>): Required<JsonProxyConfig<Object>> => {
   return {
     setDefault: setDefault ?? false,
     checkGets: checkGets ?? true,
+    validate: validate ?? (() => true),
     parse: parse ?? JSON.parse,
     stringify: stringify ?? JSON.stringify,
   }
@@ -74,27 +86,59 @@ export function jsonProxy<
   defaults: Readonly<Object>,
   configuration: JsonProxyConfig<Object> = {},
 ): Object {
-  const { setDefault, checkGets, parse, stringify } =
+  const { setDefault, checkGets, validate, parse, stringify } =
     defaultJsonProxyConfig(configuration)
+
+  const validOrThrow = (
+    valid: ReturnType<Required<JsonProxyConfig<Object>>['validate']>,
+    action: 'get' | 'set',
+  ) => {
+    const error = new TypeError(
+      action === 'get'
+        ? `Validation failed while parsing ${lsKey} from localStorage`
+        : `Validation failed while setting to ${lsKey} in localStorage`,
+    )
+
+    // Throw error on failure
+    if (typeof valid === 'boolean') {
+      if (!valid) throw error
+    } else if (!valid[0]) {
+      if (valid.length === 2) throw valid[1]
+      else throw error
+    }
+  }
+
+  const checkParse = (value: string): Object => {
+    const parsed = parse(value)
+    const valid = validate(parsed)
+    validOrThrow(valid, 'get')
+    return parsed
+  }
+
+  const checkStringify = (value: any): string => {
+    const valid = validate(value)
+    validOrThrow(valid, 'set')
+    return stringify(value)
+  }
 
   let object = { ...defaults } as Object
 
   // Update localStorage value
   if (!localStorage[lsKey]) {
-    if (setDefault) localStorage[lsKey] = stringify(defaults)
-  } else object = parse(localStorage[lsKey])
+    if (setDefault) localStorage[lsKey] = checkStringify(defaults)
+  } else object = checkParse(localStorage[lsKey])
 
   return new Proxy(object, {
     set(target, key: Keys, value: string, receiver) {
       const setResult = Reflect.set(target, key, value, receiver)
-      localStorage[lsKey] = stringify(target)
+      localStorage[lsKey] = checkStringify(target)
 
       return setResult
     },
 
     get(target, key: Keys, receiver) {
       if (checkGets)
-        target[key] = parse(localStorage[lsKey])[key] ?? defaults[key]
+        target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
 
       return Reflect.get(target, key, receiver)
     },

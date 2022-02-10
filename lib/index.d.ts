@@ -12,11 +12,19 @@ export interface JsonProxyConfig<Object extends Record<string, any>> {
      */
     checkGets?: boolean;
     /**
+     * Validate an object before setting it in localStorage or reading it.
+     * Should return true if an object is valid or false otherwise.
+     * If the return is false, a TypeError will be thrown from the Proxy
+     * @returns Either a boolean or false and an error to throw
+     * @default () => true
+     */
+    validate?: (value: any) => boolean | readonly [boolean] | readonly [false, Error];
+    /**
      * Function to parse object. Can be replaced with a custom function
      * to validate objects before setting/getting. Defaults to `JSON.parse`
      * @default JSON.parse
      */
-    parse?: (value: string) => Object;
+    parse?: (value: string) => any;
     /**
      * Function to stringify object. Defaults to `JSON.stringify`
      * @default JSON.stringify
