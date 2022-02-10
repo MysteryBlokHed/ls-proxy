@@ -19,6 +19,14 @@ var exports = __webpack_exports__;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.keyProxy = exports.jsonProxy = void 0;
+const defaultJsonProxyConfig = ({ setDefault, checkGets, parse, stringify, }) => {
+    return {
+        setDefault: setDefault !== null && setDefault !== void 0 ? setDefault : true,
+        checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
+        parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
+        stringify: stringify !== null && stringify !== void 0 ? stringify : JSON.stringify,
+    };
+};
 /**
  * Get a Proxy that stores a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
@@ -27,12 +35,7 @@ exports.keyProxy = exports.jsonProxy = void 0;
  *
  * @param lsKey The localStorage key to store the stringified object in
  * @param defaults The default values if the object is not stored
- * @param setDefault Whether or not to immediately store the stringified object in localStorage
- * if it is undefined
- * @param checkGets Whether or not to check localStorage when an object key is retrieved
- * @param parse Function to parse object. Can be replaced with a custom function
- * to validate objects before setting/getting. Defaults to `JSON.parse`
- * @param stringify Function to stringify object. Defaults to `JSON.stringify`
+ * @param configuration Config options
  *
  * @example
  * ```typescript
@@ -52,7 +55,8 @@ exports.keyProxy = exports.jsonProxy = void 0;
  * console.log(myPerson.name) // Checks localStorage if checkGets is true
  * ```
  */
-function jsonProxy(lsKey, defaults, setDefault = true, checkGets = true, parse = JSON.parse, stringify = JSON.stringify) {
+function jsonProxy(lsKey, defaults, configuration = {}) {
+    const { setDefault, checkGets, parse, stringify } = defaultJsonProxyConfig(configuration);
     let object = Object.assign({}, defaults);
     // Update localStorage value
     if (setDefault && !localStorage[lsKey])
@@ -68,12 +72,19 @@ function jsonProxy(lsKey, defaults, setDefault = true, checkGets = true, parse =
         get(target, key, receiver) {
             var _a;
             if (checkGets)
+                // Naturally, TypeScript doesn't believe that `keyof Object` can be a key of `Object`, so cast as any
                 target[key] = (_a = parse(localStorage[lsKey])[key]) !== null && _a !== void 0 ? _a : defaults[key];
             return Reflect.get(target, key, receiver);
         },
     });
 }
 exports.jsonProxy = jsonProxy;
+const defaultKeyProxyConfig = ({ setDefaults, checkGets, }) => {
+    return {
+        setDefaults: setDefaults !== null && setDefaults !== void 0 ? setDefaults : true,
+        checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
+    };
+};
 /**
  * Get a Proxy that sets multiple individual keys in localStorage.
  * Note that all values must be strings for this method
@@ -81,8 +92,7 @@ exports.jsonProxy = jsonProxy;
  * @param defaults The defaults values if they are undefined
  * @param id An optional unique identifier. Prefixes all keys in localStorage
  * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
- * @param setDefaults Whether or not to set the defaults in localStorage if they are not defined
- * @param checkGets Whether or not to check localStorage when an object key is retrieved
+ * @param configuration Config options
  *
  * @example
  * ```typescript
@@ -96,7 +106,8 @@ exports.jsonProxy = jsonProxy;
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-function keyProxy(defaults, id, setDefaults = false, checkGets = true) {
+function keyProxy(defaults, id, configuration = {}) {
+    const { setDefaults, checkGets } = defaultKeyProxyConfig(configuration);
     const object = Object.assign({}, defaults);
     if (setDefaults) {
         for (const [key, value] of Object.entries(defaults)) {

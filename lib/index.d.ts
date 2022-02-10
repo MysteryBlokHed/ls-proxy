@@ -1,3 +1,28 @@
+/** Configuration for jsonProxy */
+export interface JsonProxyConfig {
+    /**
+     * Whether or not to immediately store the stringified object in localStorage
+     * if it is undefined
+     * @default true
+     */
+    setDefault?: boolean;
+    /**
+     * Whether or not to check localStorage when an object key is retrieved
+     * @default true
+     */
+    checkGets?: boolean;
+    /**
+     * Function to parse object. Can be replaced with a custom function
+     * to validate objects before setting/getting. Defaults to `JSON.parse`
+     * @default JSON.parse
+     */
+    parse?: (value: string) => Object;
+    /**
+     * Function to stringify object. Defaults to `JSON.stringify`
+     * @default JSON.stringify
+     */
+    stringify?: (value: any) => string;
+}
 /**
  * Get a Proxy that stores a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
@@ -6,12 +31,7 @@
  *
  * @param lsKey The localStorage key to store the stringified object in
  * @param defaults The default values if the object is not stored
- * @param setDefault Whether or not to immediately store the stringified object in localStorage
- * if it is undefined
- * @param checkGets Whether or not to check localStorage when an object key is retrieved
- * @param parse Function to parse object. Can be replaced with a custom function
- * to validate objects before setting/getting. Defaults to `JSON.parse`
- * @param stringify Function to stringify object. Defaults to `JSON.stringify`
+ * @param configuration Config options
  *
  * @example
  * ```typescript
@@ -31,7 +51,20 @@
  * console.log(myPerson.name) // Checks localStorage if checkGets is true
  * ```
  */
-export declare function jsonProxy<Keys extends string = string, Object extends Record<Keys, any> = Record<Keys, any>>(lsKey: string, defaults: Readonly<Object>, setDefault?: boolean, checkGets?: boolean, parse?: (value: string) => Object, stringify?: (value: any) => string): Object;
+export declare function jsonProxy<Keys extends string = string, Object extends Record<Keys, any> = Record<Keys, any>>(lsKey: string, defaults: Readonly<Object>, configuration?: JsonProxyConfig): Object;
+/** Configuration for keyProxy */
+interface KeyProxyConfig {
+    /**
+     * Whether or not to set the defaults in localStorage if they are not defined
+     * @default false
+     */
+    setDefaults?: boolean;
+    /**
+     * Whether or not to check localStorage when an object key is retrieved
+     * @default true
+     */
+    checkGets?: boolean;
+}
 /**
  * Get a Proxy that sets multiple individual keys in localStorage.
  * Note that all values must be strings for this method
@@ -39,8 +72,7 @@ export declare function jsonProxy<Keys extends string = string, Object extends R
  * @param defaults The defaults values if they are undefined
  * @param id An optional unique identifier. Prefixes all keys in localStorage
  * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
- * @param setDefaults Whether or not to set the defaults in localStorage if they are not defined
- * @param checkGets Whether or not to check localStorage when an object key is retrieved
+ * @param configuration Config options
  *
  * @example
  * ```typescript
@@ -54,6 +86,7 @@ export declare function jsonProxy<Keys extends string = string, Object extends R
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-export declare function keyProxy<Keys extends string = string, Object extends Record<Keys, string> = Record<Keys, string>>(defaults: Readonly<Object>, id?: string, setDefaults?: boolean, checkGets?: boolean): Object;
+export declare function keyProxy<Keys extends string = string, Object extends Record<Keys, string> = Record<Keys, string>>(defaults: Readonly<Object>, id?: string, configuration?: KeyProxyConfig): Object;
+export {};
 
 export as namespace LSProxy;

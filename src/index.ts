@@ -1,3 +1,43 @@
+/** Configuration for jsonProxy */
+export interface JsonProxyConfig {
+  /**
+   * Whether or not to immediately store the stringified object in localStorage
+   * if it is undefined
+   * @default true
+   */
+  setDefault?: boolean
+  /**
+   * Whether or not to check localStorage when an object key is retrieved
+   * @default true
+   */
+  checkGets?: boolean
+  /**
+   * Function to parse object. Can be replaced with a custom function
+   * to validate objects before setting/getting. Defaults to `JSON.parse`
+   * @default JSON.parse
+   */
+  parse?: (value: string) => Object
+  /**
+   * Function to stringify object. Defaults to `JSON.stringify`
+   * @default JSON.stringify
+   */
+  stringify?: (value: any) => string
+}
+
+const defaultJsonProxyConfig = ({
+  setDefault,
+  checkGets,
+  parse,
+  stringify,
+}: JsonProxyConfig): Required<JsonProxyConfig> => {
+  return {
+    setDefault: setDefault ?? true,
+    checkGets: checkGets ?? true,
+    parse: parse ?? JSON.parse,
+    stringify: stringify ?? JSON.stringify,
+  }
+}
+
 /**
  * Get a Proxy that stores a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
@@ -6,12 +46,7 @@
  *
  * @param lsKey The localStorage key to store the stringified object in
  * @param defaults The default values if the object is not stored
- * @param setDefault Whether or not to immediately store the stringified object in localStorage
- * if it is undefined
- * @param checkGets Whether or not to check localStorage when an object key is retrieved
- * @param parse Function to parse object. Can be replaced with a custom function
- * to validate objects before setting/getting. Defaults to `JSON.parse`
- * @param stringify Function to stringify object. Defaults to `JSON.stringify`
+ * @param configuration Config options
  *
  * @example
  * ```typescript
@@ -37,11 +72,11 @@ export function jsonProxy<
 >(
   lsKey: string,
   defaults: Readonly<Object>,
-  setDefault = true,
-  checkGets = true,
-  parse: (value: string) => Object = JSON.parse,
-  stringify: (value: any) => string = JSON.stringify,
+  configuration: JsonProxyConfig = {},
 ): Object {
+  const { setDefault, checkGets, parse, stringify } =
+    defaultJsonProxyConfig(configuration)
+
   let object = { ...defaults } as Object
 
   // Update localStorage value
@@ -59,11 +94,36 @@ export function jsonProxy<
 
     get(target, key: Keys, receiver) {
       if (checkGets)
-        target[key] = parse(localStorage[lsKey])[key] ?? defaults[key]
+        // Naturally, TypeScript doesn't believe that `keyof Object` can be a key of `Object`, so cast as any
+        target[key] = (parse(localStorage[lsKey]) as any)[key] ?? defaults[key]
 
       return Reflect.get(target, key, receiver)
     },
   })
+}
+
+/** Configuration for keyProxy */
+interface KeyProxyConfig {
+  /**
+   * Whether or not to set the defaults in localStorage if they are not defined
+   * @default false
+   */
+  setDefaults?: boolean
+  /**
+   * Whether or not to check localStorage when an object key is retrieved
+   * @default true
+   */
+  checkGets?: boolean
+}
+
+const defaultKeyProxyConfig = ({
+  setDefaults,
+  checkGets,
+}: KeyProxyConfig): Required<KeyProxyConfig> => {
+  return {
+    setDefaults: setDefaults ?? true,
+    checkGets: checkGets ?? true,
+  }
 }
 
 /**
@@ -73,8 +133,7 @@ export function jsonProxy<
  * @param defaults The defaults values if they are undefined
  * @param id An optional unique identifier. Prefixes all keys in localStorage
  * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
- * @param setDefaults Whether or not to set the defaults in localStorage if they are not defined
- * @param checkGets Whether or not to check localStorage when an object key is retrieved
+ * @param configuration Config options
  *
  * @example
  * ```typescript
@@ -94,9 +153,9 @@ export function keyProxy<
 >(
   defaults: Readonly<Object>,
   id?: string,
-  setDefaults = false,
-  checkGets = true,
+  configuration: KeyProxyConfig = {},
 ): Object {
+  const { setDefaults, checkGets } = defaultKeyProxyConfig(configuration)
   const object = { ...defaults } as Object
 
   if (setDefaults) {
