@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.1.0
+
 ### Added
 
 - Function to automatically change a serialized object in localStorage when an object is modified (`storeObject`)
