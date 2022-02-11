@@ -12,7 +12,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
      *
      * @returns A boolean to confirm validity, false and an Error instance to deny validity,
      * or return true alongside an object to pass on instead of the original
-     * @default () => true
+     * @default keyValidation
      */
     validate?: (value: any) => O | boolean | readonly [boolean] | readonly [false, Error];
     /**
@@ -28,6 +28,24 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
      */
     stringify?: (value: any) => string;
 }
+/**
+ * A function that can be used to validate that only expected keys are present on an object.
+ * Meant to be used in a validate function for `storeObject`
+ * @example
+ * ```typescript
+ * import { storeObject, keyValidation } from 'ls-proxy'
+ *
+ * const myObj = storeObject(
+ *   'myObj',
+ *   { foo: 'bar' },
+ *   { validate: value => keyValidation(value, ['foo']) },
+ * )
+ *
+ * myObj.foo = 'abc' // no error
+ * myObj.bar = 'xyz' // error
+ * ```
+ */
+export declare const keyValidation: <Obj extends Record<string, any>>(value: any, requiredKeys: readonly string[]) => boolean | readonly [boolean] | readonly [false, Error] | Obj;
 /**
  * Store a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
@@ -58,6 +76,8 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  * @example
  * ```typescript
  * // Validating that the expected keys exist and are the correct type
+ * import { storeObject, keyValidation } from 'ls-proxy'
+ *
  * const myObj = storeObject(
  *   'myObj',
  *   {
@@ -66,6 +86,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  *   },
  *   {
  *     validate(value) {
+ *       if (!keyValidation(value, ['someString', 'someNumber'])) return false
  *       if (typeof value.someString !== 'string') return false
  *       if (typeof value.someNumber !== 'number') return false
  *       return true
@@ -78,6 +99,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  * ```typescript
  * // Validation to automatically change a key based on another
  * import { storeObject } from 'ls-proxy'
+ *
  * interface Person {
  *   name: string
  *   age: number

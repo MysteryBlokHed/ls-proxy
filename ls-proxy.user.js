@@ -18,7 +18,27 @@ var exports = __webpack_exports__;
   \**********************/
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.storeSeparate = exports.storeObject = void 0;
+exports.storeSeparate = exports.storeObject = exports.keyValidation = void 0;
+/**
+ * A function that can be used to validate that only expected keys are present on an object.
+ * Meant to be used in a validate function for `storeObject`
+ * @example
+ * ```typescript
+ * import { storeObject, keyValidation } from 'ls-proxy'
+ *
+ * const myObj = storeObject(
+ *   'myObj',
+ *   { foo: 'bar' },
+ *   { validate: value => keyValidation(value, ['foo']) },
+ * )
+ *
+ * myObj.foo = 'abc' // no error
+ * myObj.bar = 'xyz' // error
+ * ```
+ */
+const keyValidation = (value, requiredKeys) => Object.keys(value).every(key => requiredKeys.includes(key)) &&
+    requiredKeys.every(key => key in value);
+exports.keyValidation = keyValidation;
 const defaultStoreObjectConfig = ({ checkGets, validate, parse, stringify, }) => {
     return {
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
@@ -57,6 +77,8 @@ const defaultStoreObjectConfig = ({ checkGets, validate, parse, stringify, }) =>
  * @example
  * ```typescript
  * // Validating that the expected keys exist and are the correct type
+ * import { storeObject, keyValidation } from 'ls-proxy'
+ *
  * const myObj = storeObject(
  *   'myObj',
  *   {
@@ -65,6 +87,7 @@ const defaultStoreObjectConfig = ({ checkGets, validate, parse, stringify, }) =>
  *   },
  *   {
  *     validate(value) {
+ *       if (!keyValidation(value, ['someString', 'someNumber'])) return false
  *       if (typeof value.someString !== 'string') return false
  *       if (typeof value.someNumber !== 'number') return false
  *       return true
@@ -77,6 +100,7 @@ const defaultStoreObjectConfig = ({ checkGets, validate, parse, stringify, }) =>
  * ```typescript
  * // Validation to automatically change a key based on another
  * import { storeObject } from 'ls-proxy'
+ *
  * interface Person {
  *   name: string
  *   age: number

@@ -1,4 +1,4 @@
-import { storeObject } from 'ls-proxy'
+import { storeObject, keyValidation } from 'ls-proxy'
 
 interface Person {
   name: string
@@ -9,7 +9,7 @@ const personKeys = ['name', 'age']
 /** Validate that an entry is a Person */
 const validate = (value: any): boolean => {
   // Check that the only keys on the passed object are keys of Person
-  if (!Object.keys(value).every(key => personKeys.includes(key))) return false
+  if (!keyValidation(value, personKeys)) return false
   // Check that keys are of the correct types
   if (typeof value.name !== 'string') return false
   if (typeof value.age !== 'number') return false
