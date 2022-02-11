@@ -8,35 +8,11 @@ export interface StoreObjectConfig<Object extends Record<string, any>> {
     /**
      * Validate an object before setting it in localStorage or reading it.
      * Can confirm/deny if the object is valid, or modify the object before passing it on.
+     * See validation examples in the examples/ directory or in the documentation for `storeObject`
      *
      * @returns A boolean to confirm validity, false and an Error instance to deny validity,
      * or return true alongside an object to pass on instead of the original
      * @default () => true
-     * @example
-     * ```typescript
-     * // Check that all array members are numbers
-     * const validate = (value: Record<string, number[]>) => {
-     *   for (const arr of Object.values(value)) {
-     *     if (!arr.every(el => typeof el === 'number')) return false
-     *   }
-     *   return true
-     * }
-     * ```
-     * @example
-     * ```typescript
-     * // Automatically change a key based on another
-     * interface Person {
-     *   name: string
-     *   age: number
-     *   minor: boolean
-     * }
-     *
-     * const validate = (value: Person) => {
-     *   if (value.age >= 18) value.minor = false
-     *   else value.minor = true
-     *   return value
-     * }
-     * ```
      */
     validate?: (value: any) => Object | boolean | readonly [boolean] | readonly [false, Error];
     /**
@@ -73,7 +49,6 @@ export interface StoreObjectConfig<Object extends Record<string, any>> {
  *   name: 'John',
  *   age: 21,
  *   interests: ['programming'],
- *   minor: false,
  * })
  *
  * myPerson.name = 'Joe' // Updates localStorage
@@ -97,6 +72,42 @@ export interface StoreObjectConfig<Object extends Record<string, any>> {
  *     },
  *   },
  * )
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Validation to automatically change a key based on another
+ * import { storeObject } from 'ls-proxy'
+ * interface Person {
+ *   name: string
+ *   age: number
+ *   minor: boolean
+ * }
+ *
+ * const myPerson = storeObject(
+ *   'myPerson',
+ *   {
+ *     name: 'Ellie',
+ *     age: 17,
+ *     minor: true,
+ *   } as Person,
+ *   {
+ *     // If the person's age is 18 or greater, set minor to false.
+ *     // Otherwise, set it to true.
+ *     // This will affect values as they're being stored in localStorage
+ *     // and retrieved from it
+ *     validate(value) {
+ *       if (value.age >= 18) value.minor = false
+ *       else value.minor = true
+ *       return value
+ *     },
+ *   },
+ * )
+ *
+ * myPerson.age = 18
+ * console.log(myPerson.minor) // false
+ * myPerson.age = 16
+ * console.log(myPerson.minor) // true
  * ```
  */
 export declare function storeObject<Keys extends string = string, Object extends Record<Keys, any> = Record<Keys, any>>(lsKey: string, defaults: Readonly<Object>, configuration?: StoreObjectConfig<Object>): Object;
