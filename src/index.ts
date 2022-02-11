@@ -1,5 +1,5 @@
 /** Configuration for storeObject */
-export interface StoreObjectConfig {
+export interface StoreObjectConfig<Object extends Record<string, any>> {
   /**
    * Whether or not to check localStorage when an object key is retrieved
    * @default true
@@ -7,14 +7,40 @@ export interface StoreObjectConfig {
   checkGets?: boolean
   /**
    * Validate an object before setting it in localStorage or reading it.
-   * Should return true if an object is valid or false otherwise.
-   * If the return is false, a TypeError will be thrown from the Proxy
-   * @returns Either a boolean or false and an error to throw
+   * Can confirm/deny if the object is valid, or modify the object before passing it on.
+   *
+   * @returns A boolean to confirm validity, false and an Error instance to deny validity,
+   * or return true alongside an object to pass on instead of the original
    * @default () => true
+   * @example
+   * ```typescript
+   * // Check that all array members are numbers
+   * const validate = (value: Record<string, number[]>) => {
+   *   for (const arr of Object.values(value)) {
+   *     if (!arr.every(el => typeof el === 'number')) return false
+   *   }
+   *   return true
+   * }
+   * ```
+   * @example
+   * ```typescript
+   * // Automatically change a key based on another
+   * interface Person {
+   *   name: string
+   *   age: number
+   *   minor: boolean
+   * }
+   *
+   * const validate = (value: Person) => {
+   *   if (value.age >= 21) value.minor = false
+   *   else value.minor = true
+   *   return value
+   * }
+   * ```
    */
   validate?: (
     value: any,
-  ) => boolean | readonly [boolean] | readonly [false, Error]
+  ) => Object | boolean | readonly [boolean] | readonly [false, Error]
   /**
    * Function to parse object. Defaults to `JSON.parse`.
    * Any validation should **NOT** be done here, but in the validate method
@@ -29,12 +55,12 @@ export interface StoreObjectConfig {
   stringify?: (value: any) => string
 }
 
-const defaultStoreObjectConfig = ({
+const defaultStoreObjectConfig = <Object extends Record<string, any>>({
   checkGets,
   validate,
   parse,
   stringify,
-}: StoreObjectConfig): Required<StoreObjectConfig> => {
+}: StoreObjectConfig<Object>): Required<StoreObjectConfig<Object>> => {
   return {
     checkGets: checkGets ?? true,
     validate: validate ?? (() => true),
@@ -96,23 +122,19 @@ export function storeObject<
 >(
   lsKey: string,
   defaults: Readonly<Object>,
-  configuration: StoreObjectConfig = {},
+  configuration: StoreObjectConfig<Object> = {},
 ): Object {
   const { checkGets, validate, parse, stringify } =
     defaultStoreObjectConfig(configuration)
 
   const checkParse = (value: string): Object => {
     const parsed = parse(value)
-    const valid = validate(parsed)
-    validOrThrow(valid, 'get', lsKey)
-    return parsed
+    const valid = validOrThrow(validate(parsed), parsed, 'get', lsKey)
+    return valid
   }
 
-  const checkStringify = (value: any): string => {
-    const valid = validate(value)
-    validOrThrow(valid, 'set', lsKey)
-    return stringify(value)
-  }
+  const checkStringify = (value: any): string =>
+    stringify(validOrThrow(validate(value), value, 'set', lsKey))
 
   let object = { ...defaults } as Object
 
@@ -138,24 +160,36 @@ export function storeObject<
   })
 }
 
-const validOrThrow = (
-  valid: ReturnType<Required<StoreObjectConfig>['validate']>,
+const validOrThrow = <Object extends Record<string, any>>(
+  valid: ReturnType<Required<StoreObjectConfig<Object>>['validate']>,
+  object: Readonly<Object>,
   action: 'get' | 'set',
   lsKey: string,
-) => {
+): Object => {
   const error = new TypeError(
     action === 'get'
       ? `Validation failed while parsing ${lsKey} from localStorage`
       : `Validation failed while setting to ${lsKey} in localStorage`,
   )
 
+  console.log('doing thing with validity', valid, 'and obj', object)
+
   // Throw error on failure
   if (typeof valid === 'boolean') {
+    // Return is bool
     if (!valid) throw error
-  } else if (!valid[0]) {
-    if (valid.length === 2) throw valid[1]
-    else throw error
+  } else if (Array.isArray(valid)) {
+    // Return is array
+    if (!valid[0]) {
+      if (valid.length === 2) throw valid[1]
+      else throw error
+    }
+  } else {
+    // Return is a new object
+    return valid as Object
   }
+
+  return object
 }
 
 /** Configuration for storeSeparate */

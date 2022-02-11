@@ -1,5 +1,5 @@
 /** Configuration for storeObject */
-export interface StoreObjectConfig {
+export interface StoreObjectConfig<Object extends Record<string, any>> {
     /**
      * Whether or not to check localStorage when an object key is retrieved
      * @default true
@@ -7,12 +7,38 @@ export interface StoreObjectConfig {
     checkGets?: boolean;
     /**
      * Validate an object before setting it in localStorage or reading it.
-     * Should return true if an object is valid or false otherwise.
-     * If the return is false, a TypeError will be thrown from the Proxy
-     * @returns Either a boolean or false and an error to throw
+     * Can confirm/deny if the object is valid, or modify the object before passing it on.
+     *
+     * @returns A boolean to confirm validity, false and an Error instance to deny validity,
+     * or return true alongside an object to pass on instead of the original
      * @default () => true
+     * @example
+     * ```typescript
+     * // Check that all array members are numbers
+     * const validate = (value: Record<string, number[]>) => {
+     *   for (const arr of Object.values(value)) {
+     *     if (!arr.every(el => typeof el === 'number')) return false
+     *   }
+     *   return true
+     * }
+     * ```
+     * @example
+     * ```typescript
+     * // Automatically change a key based on another
+     * interface Person {
+     *   name: string
+     *   age: number
+     *   minor: boolean
+     * }
+     *
+     * const validate = (value: Person) => {
+     *   if (value.age >= 21) value.minor = false
+     *   else value.minor = true
+     *   return value
+     * }
+     * ```
      */
-    validate?: (value: any) => boolean | readonly [boolean] | readonly [false, Error];
+    validate?: (value: any) => Object | boolean | readonly [boolean] | readonly [false, Error];
     /**
      * Function to parse object. Defaults to `JSON.parse`.
      * Any validation should **NOT** be done here, but in the validate method
@@ -73,7 +99,7 @@ export interface StoreObjectConfig {
  * )
  * ```
  */
-export declare function storeObject<Keys extends string = string, Object extends Record<Keys, any> = Record<Keys, any>>(lsKey: string, defaults: Readonly<Object>, configuration?: StoreObjectConfig): Object;
+export declare function storeObject<Keys extends string = string, Object extends Record<Keys, any> = Record<Keys, any>>(lsKey: string, defaults: Readonly<Object>, configuration?: StoreObjectConfig<Object>): Object;
 /** Configuration for storeSeparate */
 export interface StoreSeparateConfig {
     /**
