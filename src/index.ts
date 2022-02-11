@@ -211,11 +211,6 @@ export interface StoreSeparateConfig {
    */
   id?: string
   /**
-   * Whether or not to set the defaults in localStorage if they are not defined
-   * @default false
-   */
-  setDefaults?: boolean
-  /**
    * Whether or not to check localStorage when an object key is retrieved
    * @default true
    */
@@ -224,13 +219,11 @@ export interface StoreSeparateConfig {
 
 const defaultStoreSeparateConfig = ({
   id,
-  setDefaults,
   checkGets,
 }: StoreSeparateConfig): Omit<Required<StoreSeparateConfig>, 'id'> &
   Pick<StoreSeparateConfig, 'id'> => {
   return {
     id,
-    setDefaults: setDefaults ?? false,
     checkGets: checkGets ?? true,
   }
 }
@@ -258,16 +251,14 @@ export function storeSeparate<
   Keys extends string = string,
   Object extends Record<Keys, string> = Record<Keys, string>,
 >(defaults: Readonly<Object>, configuration: StoreSeparateConfig = {}): Object {
-  const { id, setDefaults, checkGets } =
-    defaultStoreSeparateConfig(configuration)
+  const { id, checkGets } = defaultStoreSeparateConfig(configuration)
   const object = { ...defaults } as Object
 
-  if (setDefaults) {
-    for (const [key, value] of Object.entries(defaults) as [Keys, string][]) {
-      const keyPrefix = addId(key, id)
-      if (!localStorage[keyPrefix]) localStorage[keyPrefix] = value
-      else object[key] = localStorage[keyPrefix]
-    }
+  // Set defaults
+  for (const [key, value] of Object.entries(defaults) as [Keys, string][]) {
+    const keyPrefix = addId(key, id)
+    if (!localStorage[keyPrefix]) localStorage[keyPrefix] = value
+    else object[key] = localStorage[keyPrefix]
   }
 
   return new Proxy(object, {

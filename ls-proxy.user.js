@@ -165,10 +165,9 @@ const validOrThrow = (valid, object, action, lsKey) => {
     }
     return object;
 };
-const defaultStoreSeparateConfig = ({ id, setDefaults, checkGets, }) => {
+const defaultStoreSeparateConfig = ({ id, checkGets, }) => {
     return {
         id,
-        setDefaults: setDefaults !== null && setDefaults !== void 0 ? setDefaults : false,
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
     };
 };
@@ -192,16 +191,15 @@ const defaultStoreSeparateConfig = ({ id, setDefaults, checkGets, }) => {
  * ```
  */
 function storeSeparate(defaults, configuration = {}) {
-    const { id, setDefaults, checkGets } = defaultStoreSeparateConfig(configuration);
+    const { id, checkGets } = defaultStoreSeparateConfig(configuration);
     const object = Object.assign({}, defaults);
-    if (setDefaults) {
-        for (const [key, value] of Object.entries(defaults)) {
-            const keyPrefix = addId(key, id);
-            if (!localStorage[keyPrefix])
-                localStorage[keyPrefix] = value;
-            else
-                object[key] = localStorage[keyPrefix];
-        }
+    // Set defaults
+    for (const [key, value] of Object.entries(defaults)) {
+        const keyPrefix = addId(key, id);
+        if (!localStorage[keyPrefix])
+            localStorage[keyPrefix] = value;
+        else
+            object[key] = localStorage[keyPrefix];
     }
     return new Proxy(object, {
         set(target, key, value, receiver) {

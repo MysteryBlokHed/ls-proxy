@@ -119,11 +119,6 @@ export interface StoreSeparateConfig {
      */
     id?: string;
     /**
-     * Whether or not to set the defaults in localStorage if they are not defined
-     * @default false
-     */
-    setDefaults?: boolean;
-    /**
      * Whether or not to check localStorage when an object key is retrieved
      * @default true
      */
