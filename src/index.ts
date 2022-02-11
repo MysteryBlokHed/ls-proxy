@@ -1,5 +1,5 @@
 /** Configuration for storeObject */
-export interface StoreObjectConfig<Object extends Record<string, any>> {
+export interface StoreObjectConfig<O extends Record<string, any>> {
   /**
    * Whether or not to check localStorage when an object key is retrieved
    * @default true
@@ -16,7 +16,7 @@ export interface StoreObjectConfig<Object extends Record<string, any>> {
    */
   validate?: (
     value: any,
-  ) => Object | boolean | readonly [boolean] | readonly [false, Error]
+  ) => O | boolean | readonly [boolean] | readonly [false, Error]
   /**
    * Function to parse object. Defaults to `JSON.parse`.
    * Any validation should **NOT** be done here, but in the validate method
@@ -31,12 +31,12 @@ export interface StoreObjectConfig<Object extends Record<string, any>> {
   stringify?: (value: any) => string
 }
 
-const defaultStoreObjectConfig = <Object extends Record<string, any>>({
+const defaultStoreObjectConfig = <O extends Record<string, any>>({
   checkGets,
   validate,
   parse,
   stringify,
-}: StoreObjectConfig<Object>): Required<StoreObjectConfig<Object>> => {
+}: StoreObjectConfig<O>): Required<StoreObjectConfig<O>> => {
   return {
     checkGets: checkGets ?? true,
     validate: validate ?? (() => true),
@@ -128,17 +128,17 @@ const defaultStoreObjectConfig = <Object extends Record<string, any>>({
  * ```
  */
 export function storeObject<
-  Keys extends string = string,
-  Object extends Record<Keys, any> = Record<Keys, any>,
+  K extends string = string,
+  O extends Record<K, any> = Record<K, any>,
 >(
   lsKey: string,
-  defaults: Readonly<Object>,
-  configuration: StoreObjectConfig<Object> = {},
-): Object {
+  defaults: Readonly<O>,
+  configuration: StoreObjectConfig<O> = {},
+): O {
   const { checkGets, validate, parse, stringify } =
     defaultStoreObjectConfig(configuration)
 
-  const checkParse = (value: string): Object => {
+  const checkParse = (value: string): O => {
     const parsed = parse(value)
     const valid = validOrThrow(validate(parsed), parsed, 'get', lsKey)
     return valid
@@ -147,7 +147,7 @@ export function storeObject<
   const checkStringify = (value: any): string =>
     stringify(validOrThrow(validate(value), value, 'set', lsKey))
 
-  let object = { ...defaults } as Object
+  let object = { ...defaults } as O
 
   // Update localStorage value
   if (!localStorage[lsKey]) {
@@ -155,14 +155,14 @@ export function storeObject<
   } else object = checkParse(localStorage[lsKey])
 
   return new Proxy(object, {
-    set(target, key: Keys, value: string, receiver) {
+    set(target, key: K, value: string, receiver) {
       const setResult = Reflect.set(target, key, value, receiver)
       localStorage[lsKey] = checkStringify(target)
 
       return setResult
     },
 
-    get(target, key: Keys, receiver) {
+    get(target, key: K, receiver) {
       if (checkGets)
         target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
 
@@ -171,12 +171,12 @@ export function storeObject<
   })
 }
 
-const validOrThrow = <Object extends Record<string, any>>(
-  valid: ReturnType<Required<StoreObjectConfig<Object>>['validate']>,
-  object: Readonly<Object>,
+const validOrThrow = <O extends Record<string, any>>(
+  valid: ReturnType<Required<StoreObjectConfig<O>>['validate']>,
+  object: Readonly<O>,
   action: 'get' | 'set',
   lsKey: string,
-): Object => {
+): O => {
   const error = new TypeError(
     action === 'get'
       ? `Validation failed while parsing ${lsKey} from localStorage`
@@ -195,7 +195,7 @@ const validOrThrow = <Object extends Record<string, any>>(
     }
   } else {
     // Return is a new object
-    return valid as Object
+    return valid as O
   }
 
   return object
@@ -246,26 +246,26 @@ const defaultStoreSeparateConfig = ({
  * ```
  */
 export function storeSeparate<
-  Keys extends string = string,
-  Object extends Record<Keys, string> = Record<Keys, string>,
->(defaults: Readonly<Object>, configuration: StoreSeparateConfig = {}): Object {
+  K extends string = string,
+  O extends Record<K, string> = Record<K, string>,
+>(defaults: Readonly<O>, configuration: StoreSeparateConfig = {}): O {
   const { id, checkGets } = defaultStoreSeparateConfig(configuration)
-  const object = { ...defaults } as Object
+  const object = { ...defaults } as O
 
   // Set defaults
-  for (const [key, value] of Object.entries(defaults) as [Keys, string][]) {
+  for (const [key, value] of Object.entries(defaults) as [K, string][]) {
     const keyPrefix = addId(key, id)
     if (!localStorage[keyPrefix]) localStorage[keyPrefix] = value
     else object[key] = localStorage[keyPrefix]
   }
 
   return new Proxy(object, {
-    set(target, key: Keys, value: string, receiver) {
+    set(target, key: K, value: string, receiver) {
       localStorage[addId(key, id)] = value
       return Reflect.set(target, key, value, receiver)
     },
 
-    get(target, key: Keys, receiver) {
+    get(target, key: K, receiver) {
       if (checkGets) target[key] = localStorage[addId(key, id)] ?? defaults[key]
       return Reflect.get(target, key, receiver)
     },
