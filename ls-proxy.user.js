@@ -127,7 +127,7 @@ function jsonProxy(lsKey, defaults, configuration = {}) {
 exports.jsonProxy = jsonProxy;
 const defaultKeyProxyConfig = ({ setDefaults, checkGets, }) => {
     return {
-        setDefaults: setDefaults !== null && setDefaults !== void 0 ? setDefaults : true,
+        setDefaults: setDefaults !== null && setDefaults !== void 0 ? setDefaults : false,
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
     };
 };

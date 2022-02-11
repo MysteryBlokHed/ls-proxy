@@ -175,7 +175,7 @@ const defaultKeyProxyConfig = ({
   checkGets,
 }: KeyProxyConfig): Required<KeyProxyConfig> => {
   return {
-    setDefaults: setDefaults ?? true,
+    setDefaults: setDefaults ?? false,
     checkGets: checkGets ?? true,
   }
 }
