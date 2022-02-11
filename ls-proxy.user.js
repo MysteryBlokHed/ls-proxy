@@ -125,8 +125,9 @@ function jsonProxy(lsKey, defaults, configuration = {}) {
     });
 }
 exports.jsonProxy = jsonProxy;
-const defaultKeyProxyConfig = ({ setDefaults, checkGets, }) => {
+const defaultKeyProxyConfig = ({ id, setDefaults, checkGets, }) => {
     return {
+        id,
         setDefaults: setDefaults !== null && setDefaults !== void 0 ? setDefaults : false,
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
     };
@@ -136,8 +137,6 @@ const defaultKeyProxyConfig = ({ setDefaults, checkGets, }) => {
  * Note that all values must be strings for this method
  *
  * @param defaults The defaults values if they are undefined
- * @param id An optional unique identifier. Prefixes all keys in localStorage
- * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
  * @param configuration Config options
  *
  * @example
@@ -152,8 +151,8 @@ const defaultKeyProxyConfig = ({ setDefaults, checkGets, }) => {
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-function keyProxy(defaults, id, configuration = {}) {
-    const { setDefaults, checkGets } = defaultKeyProxyConfig(configuration);
+function keyProxy(defaults, configuration = {}) {
+    const { id, setDefaults, checkGets } = defaultKeyProxyConfig(configuration);
     const object = Object.assign({}, defaults);
     if (setDefaults) {
         for (const [key, value] of Object.entries(defaults)) {

@@ -76,6 +76,11 @@ export declare function jsonProxy<Keys extends string = string, Object extends R
 /** Configuration for keyProxy */
 export interface KeyProxyConfig {
     /**
+     * An optional unique identifier. Prefixes all keys in localStorage
+     * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
+     */
+    id?: string;
+    /**
      * Whether or not to set the defaults in localStorage if they are not defined
      * @default false
      */
@@ -91,8 +96,6 @@ export interface KeyProxyConfig {
  * Note that all values must be strings for this method
  *
  * @param defaults The defaults values if they are undefined
- * @param id An optional unique identifier. Prefixes all keys in localStorage
- * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
  * @param configuration Config options
  *
  * @example
@@ -107,6 +110,6 @@ export interface KeyProxyConfig {
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-export declare function keyProxy<Keys extends string = string, Object extends Record<Keys, string> = Record<Keys, string>>(defaults: Readonly<Object>, id?: string, configuration?: KeyProxyConfig): Object;
+export declare function keyProxy<Keys extends string = string, Object extends Record<Keys, string> = Record<Keys, string>>(defaults: Readonly<Object>, configuration?: KeyProxyConfig): Object;
 
 export as namespace LSProxy;

@@ -159,6 +159,12 @@ export function jsonProxy<
 /** Configuration for keyProxy */
 export interface KeyProxyConfig {
   /**
+   * An optional unique identifier. Prefixes all keys in localStorage
+   * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
+   */
+  id?: string
+
+  /**
    * Whether or not to set the defaults in localStorage if they are not defined
    * @default false
    */
@@ -171,10 +177,13 @@ export interface KeyProxyConfig {
 }
 
 const defaultKeyProxyConfig = ({
+  id,
   setDefaults,
   checkGets,
-}: KeyProxyConfig): Required<KeyProxyConfig> => {
+}: KeyProxyConfig): Omit<Required<KeyProxyConfig>, 'id'> &
+  Pick<KeyProxyConfig, 'id'> => {
   return {
+    id,
     setDefaults: setDefaults ?? false,
     checkGets: checkGets ?? true,
   }
@@ -185,8 +194,6 @@ const defaultKeyProxyConfig = ({
  * Note that all values must be strings for this method
  *
  * @param defaults The defaults values if they are undefined
- * @param id An optional unique identifier. Prefixes all keys in localStorage
- * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
  * @param configuration Config options
  *
  * @example
@@ -204,12 +211,8 @@ const defaultKeyProxyConfig = ({
 export function keyProxy<
   Keys extends string = string,
   Object extends Record<Keys, string> = Record<Keys, string>,
->(
-  defaults: Readonly<Object>,
-  id?: string,
-  configuration: KeyProxyConfig = {},
-): Object {
-  const { setDefaults, checkGets } = defaultKeyProxyConfig(configuration)
+>(defaults: Readonly<Object>, configuration: KeyProxyConfig = {}): Object {
+  const { id, setDefaults, checkGets } = defaultKeyProxyConfig(configuration)
   const object = { ...defaults } as Object
 
   if (setDefaults) {
