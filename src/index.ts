@@ -237,4 +237,5 @@ export function keyProxy<
   })
 }
 
-const addId = (key: string, id: string | undefined) => (id ? `${id}.key` : key)
+const addId = (key: string, id: string | undefined) =>
+  id ? `${id}.${key}` : key
