@@ -1,5 +1,5 @@
 /** Configuration for storeObject */
-export interface StoreObjectConfig<Object extends Record<string, any> = never> {
+export interface StoreObjectConfig<O extends Record<string, any>> {
     /**
      * Whether or not to check localStorage when an object key is retrieved
      * @default true
@@ -14,7 +14,7 @@ export interface StoreObjectConfig<Object extends Record<string, any> = never> {
      * or return true alongside an object to pass on instead of the original
      * @default keyValidation
      */
-    validate?: (value: any) => Object | boolean | readonly [boolean] | readonly [false, Error];
+    validate?: (value: any) => O | boolean | readonly [boolean] | readonly [false, Error];
     /**
      * Function to parse object. Defaults to `JSON.parse`.
      * Any validation should **NOT** be done here, but in the validate method
@@ -28,24 +28,6 @@ export interface StoreObjectConfig<Object extends Record<string, any> = never> {
      */
     stringify?: (value: any) => string;
 }
-/**
- * A function that can be used to validate that only expected keys are present on an object.
- * Meant to be used in a validate function for `storeObject`
- * @example
- * ```typescript
- * import { storeObject, keyValidation } from 'ls-proxy'
- *
- * const myObj = storeObject(
- *   'myObj',
- *   { foo: 'bar' },
- *   { validate: value => keyValidation(value, ['foo']) },
- * )
- *
- * myObj.foo = 'abc' // no error
- * myObj.bar = 'xyz' // error
- * ```
- */
-export declare const keyValidation: <Obj extends Record<string, any>>(value: any, requiredKeys: readonly string[]) => boolean | readonly [boolean] | readonly [false, Error] | Obj;
 /**
  * Store a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
@@ -128,7 +110,7 @@ export declare const keyValidation: <Obj extends Record<string, any>>(value: any
  * console.log(myPerson.minor) // true
  * ```
  */
-export declare function storeObject<Keys extends string = string, Object extends Record<Keys, any> = Record<Keys, any>>(lsKey: string, defaults: Readonly<Object>, configuration?: StoreObjectConfig<Object>): Object;
+export declare function storeObject<K extends string = string, O extends Record<K, any> = Record<K, any>>(lsKey: string, defaults: Readonly<O>, configuration?: StoreObjectConfig<O>): O;
 /** Configuration for storeSeparate */
 export interface StoreSeparateConfig {
     /**
@@ -161,6 +143,6 @@ export interface StoreSeparateConfig {
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-export declare function storeSeparate<Keys extends string = string, Object extends Record<Keys, string> = Record<Keys, string>>(defaults: Readonly<Object>, configuration?: StoreSeparateConfig): Object;
+export declare function storeSeparate<K extends string = string, O extends Record<K, string> = Record<K, string>>(defaults: Readonly<O>, configuration?: StoreSeparateConfig): O;
 
 export as namespace LSProxy;
