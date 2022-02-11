@@ -183,8 +183,6 @@ const validOrThrow = <Object extends Record<string, any>>(
       : `Validation failed while setting to ${lsKey} in localStorage`,
   )
 
-  console.log('doing thing with validity', valid, 'and obj', object)
-
   // Throw error on failure
   if (typeof valid === 'boolean') {
     // Return is bool
