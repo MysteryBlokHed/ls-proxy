@@ -32,7 +32,7 @@ export interface StoreObjectConfig<Object extends Record<string, any>> {
      * }
      *
      * const validate = (value: Person) => {
-     *   if (value.age >= 21) value.minor = false
+     *   if (value.age >= 18) value.minor = false
      *   else value.minor = true
      *   return value
      * }
