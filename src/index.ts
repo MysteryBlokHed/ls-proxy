@@ -98,9 +98,9 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
  *
  * @example
  * ```typescript
+ * // Validating that the expected keys exist and are the correct type
  * import { storeObject, keyValidation } from 'ls-proxy'
  *
- * // Validating that the expected keys exist and are the correct type
  * const myObj = storeObject(
  *   'myObj',
  *   {
@@ -122,6 +122,7 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
  * ```typescript
  * // Validation to automatically change a key based on another
  * import { storeObject } from 'ls-proxy'
+ *
  * interface Person {
  *   name: string
  *   age: number
