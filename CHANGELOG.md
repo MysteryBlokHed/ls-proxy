@@ -9,5 +9,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Function to automatically change a serialized object in localStorage when an object is modified (`jsonProxy`)
-- Function to automatically change keys in localStorage when an object is modified (`keyProxy`)
+- Function to automatically change a serialized object in localStorage when an object is modified (`storeObject`)
+- Function to automatically change keys in localStorage when an object is modified (`storeSeparate`)

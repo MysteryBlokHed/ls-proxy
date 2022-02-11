@@ -1,5 +1,5 @@
-/** Configuration for jsonProxy */
-export interface JsonProxyConfig {
+/** Configuration for storeObject */
+export interface StoreObjectConfig {
   /**
    * Whether or not to check localStorage when an object key is retrieved
    * @default true
@@ -29,12 +29,12 @@ export interface JsonProxyConfig {
   stringify?: (value: any) => string
 }
 
-const defaultJsonProxyConfig = ({
+const defaultStoreObjectConfig = ({
   checkGets,
   validate,
   parse,
   stringify,
-}: JsonProxyConfig): Required<JsonProxyConfig> => {
+}: StoreObjectConfig): Required<StoreObjectConfig> => {
   return {
     checkGets: checkGets ?? true,
     validate: validate ?? (() => true),
@@ -44,7 +44,7 @@ const defaultJsonProxyConfig = ({
 }
 
 /**
- * Get a Proxy that stores a stringified JSON object in localStorage.
+ * Store a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
  * The object stored in localStorage is **not** checked for validity by default,
  * but you can pass an argument with your own function to do so
@@ -56,11 +56,11 @@ const defaultJsonProxyConfig = ({
  * @example
  * ```typescript
  * // No validation
- * import { jsonProxy } from 'ls-proxy'
+ * import { storeObject } from 'ls-proxy'
  *
  * // Stored serialized in localStorage under the key `myObject`
  * // Note that types other than string can be used
- * const myPerson = jsonProxy('myObject', {
+ * const myPerson = storeObject('myObject', {
  *   name: 'John',
  *   age: 21,
  *   interests: ['programming'],
@@ -74,7 +74,7 @@ const defaultJsonProxyConfig = ({
  * @example
  * ```typescript
  * // Validating that the expected keys exist and are the correct type
- * const myObj = jsonProxy(
+ * const myObj = storeObject(
  *   'myObj',
  *   {
  *     someString: 'string',
@@ -90,16 +90,16 @@ const defaultJsonProxyConfig = ({
  * )
  * ```
  */
-export function jsonProxy<
+export function storeObject<
   Keys extends string = string,
   Object extends Record<Keys, any> = Record<Keys, any>,
 >(
   lsKey: string,
   defaults: Readonly<Object>,
-  configuration: JsonProxyConfig = {},
+  configuration: StoreObjectConfig = {},
 ): Object {
   const { checkGets, validate, parse, stringify } =
-    defaultJsonProxyConfig(configuration)
+    defaultStoreObjectConfig(configuration)
 
   const checkParse = (value: string): Object => {
     const parsed = parse(value)
@@ -139,7 +139,7 @@ export function jsonProxy<
 }
 
 const validOrThrow = (
-  valid: ReturnType<Required<JsonProxyConfig>['validate']>,
+  valid: ReturnType<Required<StoreObjectConfig>['validate']>,
   action: 'get' | 'set',
   lsKey: string,
 ) => {
@@ -158,8 +158,8 @@ const validOrThrow = (
   }
 }
 
-/** Configuration for keyProxy */
-export interface KeyProxyConfig {
+/** Configuration for storeSeparate */
+export interface StoreSeparateConfig {
   /**
    * An optional unique identifier. Prefixes all keys in localStorage
    * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
@@ -177,12 +177,12 @@ export interface KeyProxyConfig {
   checkGets?: boolean
 }
 
-const defaultKeyProxyConfig = ({
+const defaultStoreSeparateConfig = ({
   id,
   setDefaults,
   checkGets,
-}: KeyProxyConfig): Omit<Required<KeyProxyConfig>, 'id'> &
-  Pick<KeyProxyConfig, 'id'> => {
+}: StoreSeparateConfig): Omit<Required<StoreSeparateConfig>, 'id'> &
+  Pick<StoreSeparateConfig, 'id'> => {
   return {
     id,
     setDefaults: setDefaults ?? false,
@@ -191,7 +191,7 @@ const defaultKeyProxyConfig = ({
 }
 
 /**
- * Get a Proxy that sets multiple individual keys in localStorage.
+ * Set multiple individual keys in localStorage with one object.
  * Note that all values must be strings for this method
  *
  * @param defaults The defaults values if they are undefined
@@ -199,9 +199,9 @@ const defaultKeyProxyConfig = ({
  *
  * @example
  * ```typescript
- * import { keyProxy } from 'ls-proxy'
+ * import { storeSeparate } from 'ls-proxy'
  *
- * const myObj = keyProxy({
+ * const myObj = storeSeparate({
  *   foo: 'bar',
  * })
  *
@@ -209,11 +209,12 @@ const defaultKeyProxyConfig = ({
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-export function keyProxy<
+export function storeSeparate<
   Keys extends string = string,
   Object extends Record<Keys, string> = Record<Keys, string>,
->(defaults: Readonly<Object>, configuration: KeyProxyConfig = {}): Object {
-  const { id, setDefaults, checkGets } = defaultKeyProxyConfig(configuration)
+>(defaults: Readonly<Object>, configuration: StoreSeparateConfig = {}): Object {
+  const { id, setDefaults, checkGets } =
+    defaultStoreSeparateConfig(configuration)
   const object = { ...defaults } as Object
 
   if (setDefaults) {

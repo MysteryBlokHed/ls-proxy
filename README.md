@@ -29,9 +29,9 @@ yarn add ls-proxy
 You can then import and use functions:
 
 ```javascript
-import { jsonProxy } from 'ls-proxy'
+import { storeObject } from 'ls-proxy'
 
-const myObj = jsonProxy('myObj', {
+const myObj = storeObject('myObj', {
   name: 'John',
   age: 21,
 })
@@ -59,9 +59,9 @@ You can replace `main` with a specific release tag like `v0.1.0` to require a sp
 Functions are available on the global `LSProxy` object:
 
 ```javascript
-const { jsonProxy } = LSProxy
+const { storeObject } = LSProxy
 
-const myObj = jsonProxy('myObj', {
+const myObj = storeObject('myObj', {
   name: 'John',
   age: 21,
 })

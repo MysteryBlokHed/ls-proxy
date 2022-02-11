@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ls-proxy
-// @descripton  Wraps localStorage to easily store any value
+// @descripton  Wrapper around localStorage to easily store JSON objects
 // @version     0.1.0
 // @author      Adam Thompson-Sharpe
 // @license     MIT
@@ -18,8 +18,8 @@ var exports = __webpack_exports__;
   \**********************/
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.keyProxy = exports.jsonProxy = void 0;
-const defaultJsonProxyConfig = ({ checkGets, validate, parse, stringify, }) => {
+exports.storeSeparate = exports.storeObject = void 0;
+const defaultStoreObjectConfig = ({ checkGets, validate, parse, stringify, }) => {
     return {
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
         validate: validate !== null && validate !== void 0 ? validate : (() => true),
@@ -28,7 +28,7 @@ const defaultJsonProxyConfig = ({ checkGets, validate, parse, stringify, }) => {
     };
 };
 /**
- * Get a Proxy that stores a stringified JSON object in localStorage.
+ * Store a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
  * The object stored in localStorage is **not** checked for validity by default,
  * but you can pass an argument with your own function to do so
@@ -40,11 +40,11 @@ const defaultJsonProxyConfig = ({ checkGets, validate, parse, stringify, }) => {
  * @example
  * ```typescript
  * // No validation
- * import { jsonProxy } from 'ls-proxy'
+ * import { storeObject } from 'ls-proxy'
  *
  * // Stored serialized in localStorage under the key `myObject`
  * // Note that types other than string can be used
- * const myPerson = jsonProxy('myObject', {
+ * const myPerson = storeObject('myObject', {
  *   name: 'John',
  *   age: 21,
  *   interests: ['programming'],
@@ -58,7 +58,7 @@ const defaultJsonProxyConfig = ({ checkGets, validate, parse, stringify, }) => {
  * @example
  * ```typescript
  * // Validating that the expected keys exist and are the correct type
- * const myObj = jsonProxy(
+ * const myObj = storeObject(
  *   'myObj',
  *   {
  *     someString: 'string',
@@ -74,8 +74,8 @@ const defaultJsonProxyConfig = ({ checkGets, validate, parse, stringify, }) => {
  * )
  * ```
  */
-function jsonProxy(lsKey, defaults, configuration = {}) {
-    const { checkGets, validate, parse, stringify } = defaultJsonProxyConfig(configuration);
+function storeObject(lsKey, defaults, configuration = {}) {
+    const { checkGets, validate, parse, stringify } = defaultStoreObjectConfig(configuration);
     const checkParse = (value) => {
         const parsed = parse(value);
         const valid = validate(parsed);
@@ -108,7 +108,7 @@ function jsonProxy(lsKey, defaults, configuration = {}) {
         },
     });
 }
-exports.jsonProxy = jsonProxy;
+exports.storeObject = storeObject;
 const validOrThrow = (valid, action, lsKey) => {
     const error = new TypeError(action === 'get'
         ? `Validation failed while parsing ${lsKey} from localStorage`
@@ -125,7 +125,7 @@ const validOrThrow = (valid, action, lsKey) => {
             throw error;
     }
 };
-const defaultKeyProxyConfig = ({ id, setDefaults, checkGets, }) => {
+const defaultStoreSeparateConfig = ({ id, setDefaults, checkGets, }) => {
     return {
         id,
         setDefaults: setDefaults !== null && setDefaults !== void 0 ? setDefaults : false,
@@ -133,7 +133,7 @@ const defaultKeyProxyConfig = ({ id, setDefaults, checkGets, }) => {
     };
 };
 /**
- * Get a Proxy that sets multiple individual keys in localStorage.
+ * Set multiple individual keys in localStorage with one object.
  * Note that all values must be strings for this method
  *
  * @param defaults The defaults values if they are undefined
@@ -141,9 +141,9 @@ const defaultKeyProxyConfig = ({ id, setDefaults, checkGets, }) => {
  *
  * @example
  * ```typescript
- * import { keyProxy } from 'ls-proxy'
+ * import { storeSeparate } from 'ls-proxy'
  *
- * const myObj = keyProxy({
+ * const myObj = storeSeparate({
  *   foo: 'bar',
  * })
  *
@@ -151,8 +151,8 @@ const defaultKeyProxyConfig = ({ id, setDefaults, checkGets, }) => {
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-function keyProxy(defaults, configuration = {}) {
-    const { id, setDefaults, checkGets } = defaultKeyProxyConfig(configuration);
+function storeSeparate(defaults, configuration = {}) {
+    const { id, setDefaults, checkGets } = defaultStoreSeparateConfig(configuration);
     const object = Object.assign({}, defaults);
     if (setDefaults) {
         for (const [key, value] of Object.entries(defaults)) {
@@ -176,7 +176,7 @@ function keyProxy(defaults, configuration = {}) {
         },
     });
 }
-exports.keyProxy = keyProxy;
+exports.storeSeparate = storeSeparate;
 const addId = (key, id) => id ? `${id}.${key}` : key;
 
 })();
