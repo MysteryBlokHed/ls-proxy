@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/package",
   "name": "ls-proxy",
   "version": "0.1.0",
-  "description": "Wraps localStorage to easily store any value",
+  "description": "Wrapper around localStorage to easily store JSON objects",
   "repository": "https://gitlab.com/MysteryBlokHed/ls-proxy",
   "homepage": "https://gitlab.com/MysteryBlokHed/ls-proxy",
   "author": "Adam Thompson-Sharpe",

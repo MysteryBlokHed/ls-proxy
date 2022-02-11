@@ -1,6 +1,11 @@
 # ls-proxy [![Build Badge]](https://gitlab.com/MysteryBlokHed/ls-proxy/-/pipelines) [![NPM Badge]](https://www.npmjs.com/package/ls-proxy) [![License Badge]](#license)
 
-Wraps localStorage to easily store any value.
+Wrapper around localStorage to easily store JSON objects.
+
+Supports:
+
+- Storing any type that can be serialized
+- Runtime type checking
 
 ## Documentation
 
