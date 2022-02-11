@@ -12,7 +12,7 @@ Supports:
 Documentation for the main branch is hosted at <https://ls-proxy.adamts.me>.
 Documentation can be built from a cloned repository by running `yarn doc`.
 
-Examples are located in [`examples/`](examples/).
+Examples are located in [`examples`](https://gitlab.com/MysteryBlokHed/ls-proxy/-/tree/main/examples).
 
 ## Use
 
