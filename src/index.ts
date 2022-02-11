@@ -100,35 +100,16 @@ export function jsonProxy<
   const { checkGets, validate, parse, stringify } =
     defaultJsonProxyConfig(configuration)
 
-  const validOrThrow = (
-    valid: ReturnType<Required<JsonProxyConfig>['validate']>,
-    action: 'get' | 'set',
-  ) => {
-    const error = new TypeError(
-      action === 'get'
-        ? `Validation failed while parsing ${lsKey} from localStorage`
-        : `Validation failed while setting to ${lsKey} in localStorage`,
-    )
-
-    // Throw error on failure
-    if (typeof valid === 'boolean') {
-      if (!valid) throw error
-    } else if (!valid[0]) {
-      if (valid.length === 2) throw valid[1]
-      else throw error
-    }
-  }
-
   const checkParse = (value: string): Object => {
     const parsed = parse(value)
     const valid = validate(parsed)
-    validOrThrow(valid, 'get')
+    validOrThrow(valid, 'get', lsKey)
     return parsed
   }
 
   const checkStringify = (value: any): string => {
     const valid = validate(value)
-    validOrThrow(valid, 'set')
+    validOrThrow(valid, 'set', lsKey)
     return stringify(value)
   }
 
@@ -154,6 +135,26 @@ export function jsonProxy<
       return Reflect.get(target, key, receiver)
     },
   })
+}
+
+const validOrThrow = (
+  valid: ReturnType<Required<JsonProxyConfig>['validate']>,
+  action: 'get' | 'set',
+  lsKey: string,
+) => {
+  const error = new TypeError(
+    action === 'get'
+      ? `Validation failed while parsing ${lsKey} from localStorage`
+      : `Validation failed while setting to ${lsKey} in localStorage`,
+  )
+
+  // Throw error on failure
+  if (typeof valid === 'boolean') {
+    if (!valid) throw error
+  } else if (!valid[0]) {
+    if (valid.length === 2) throw valid[1]
+    else throw error
+  }
 }
 
 /** Configuration for keyProxy */
