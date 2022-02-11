@@ -1,5 +1,5 @@
 /** Configuration for storeObject */
-export interface StoreObjectConfig<Object extends Record<string, any>> {
+export interface StoreObjectConfig<Object extends Record<string, any> = never> {
   /**
    * Whether or not to check localStorage when an object key is retrieved
    * @default true
@@ -12,7 +12,7 @@ export interface StoreObjectConfig<Object extends Record<string, any>> {
    *
    * @returns A boolean to confirm validity, false and an Error instance to deny validity,
    * or return true alongside an object to pass on instead of the original
-   * @default () => true
+   * @default keyValidation
    */
   validate?: (
     value: any,
@@ -30,6 +30,30 @@ export interface StoreObjectConfig<Object extends Record<string, any>> {
    */
   stringify?: (value: any) => string
 }
+
+/**
+ * A function that can be used to validate that only expected keys are present on an object.
+ * Meant to be used in a validate function for `storeObject`
+ * @example
+ * ```typescript
+ * import { storeObject, keyValidation } from 'ls-proxy'
+ *
+ * const myObj = storeObject(
+ *   'myObj',
+ *   { foo: 'bar' },
+ *   { validate: value => keyValidation(value, ['foo']) },
+ * )
+ *
+ * myObj.foo = 'abc' // no error
+ * myObj.bar = 'xyz' // error
+ * ```
+ */
+export const keyValidation = <Obj extends Record<string, any>>(
+  value: any,
+  requiredKeys: readonly string[],
+): ReturnType<Required<StoreObjectConfig<Obj>>['validate']> =>
+  Object.keys(value).every(key => requiredKeys.includes(key)) &&
+  requiredKeys.every(key => key in value)
 
 const defaultStoreObjectConfig = <Object extends Record<string, any>>({
   checkGets,
