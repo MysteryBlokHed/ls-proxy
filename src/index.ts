@@ -16,13 +16,14 @@ export interface JsonProxyConfig {
     value: any,
   ) => boolean | readonly [boolean] | readonly [false, Error]
   /**
-   * Function to parse object. Can be replaced with a custom function
-   * to validate objects before setting/getting. Defaults to `JSON.parse`
+   * Function to parse object. Defaults to `JSON.parse`.
+   * Any validation should **NOT** be done here, but in the validate method
    * @default JSON.parse
    */
   parse?: (value: string) => any
   /**
-   * Function to stringify object. Defaults to `JSON.stringify`
+   * Function to stringify object. Defaults to `JSON.stringify`.
+   * Any validation should **NOT** be done here, but in the validate method
    * @default JSON.stringify
    */
   stringify?: (value: any) => string
@@ -164,7 +165,6 @@ export interface KeyProxyConfig {
    * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
    */
   id?: string
-
   /**
    * Whether or not to set the defaults in localStorage if they are not defined
    * @default false
