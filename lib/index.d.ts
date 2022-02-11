@@ -29,6 +29,24 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
     stringify?: (value: any) => string;
 }
 /**
+ * A function that can be used to validate that only expected keys are present on an object.
+ * Meant to be used in a validate function for `storeObject`
+ * @example
+ * ```typescript
+ * import { storeObject, keyValidation } from 'ls-proxy'
+ *
+ * const myObj = storeObject(
+ *   'myObj',
+ *   { foo: 'bar' },
+ *   { validate: value => keyValidation(value, ['foo']) },
+ * )
+ *
+ * myObj.foo = 'abc' // no error
+ * myObj.bar = 'xyz' // error
+ * ```
+ */
+export declare const keyValidation: <Obj extends Record<string, any>>(value: any, requiredKeys: readonly string[]) => boolean | readonly [boolean] | readonly [false, Error] | Obj;
+/**
  * Store a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
  * The object stored in localStorage is **not** checked for validity by default,
