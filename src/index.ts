@@ -98,6 +98,8 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
  *
  * @example
  * ```typescript
+ * import { storeObject, keyValidation } from 'ls-proxy'
+ *
  * // Validating that the expected keys exist and are the correct type
  * const myObj = storeObject(
  *   'myObj',
@@ -107,6 +109,7 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
  *   },
  *   {
  *     validate(value) {
+ *       if (!keyValidation(value, ['someString', 'someNumber'])) return false
  *       if (typeof value.someString !== 'string') return false
  *       if (typeof value.someNumber !== 'number') return false
  *       return true
