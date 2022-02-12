@@ -7,6 +7,40 @@ Supports:
 - Storing any type that can be serialized
 - Runtime type checking
 
+## Why to use?
+
+If you want to store client-side data for your website, the way to do it is with localStorage.
+However, there is at least one siginificant downside: you can only store strings in localStorage keys.
+
+The best way to get around this is by storing a stringified JSON object in a key,
+but doing this manually or having to call a function that does it for you any time you change an object would be annoying.
+
+This library solves these problems using JS proxies.
+It also has great IDE support thanks to it being written in TypeScript.
+You can also use it with vanilla JS with the Webpacked file (`ls-proxy.user.js`),
+which is useful to test it in the browser or while writing UserScripts.
+
+Here's all it takes to store a stringifed JSON object in localStorage and automatically change it:
+
+```typescript
+import { storeObject } from 'ls-proxy'
+
+const someInfo = storeObject(
+  // The localStorage key to save data under
+  'someInfo',
+  // The object to store
+  {
+    aString: 'Hello, World!',
+    aNumber: 123,
+    aBoolean: true,
+    aList: [1, '2', 3],
+  },
+)
+
+someInfo.aNumber = 42 // Updates localStorage
+console.log(someInfo.aList) // Reads from localStorage
+```
+
 ## Documentation
 
 Documentation for the main branch is hosted at <https://ls-proxy.adamts.me>.
