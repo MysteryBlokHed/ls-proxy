@@ -7,14 +7,21 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
     checkGets?: boolean;
     /**
      * Validate an object before setting it in localStorage or reading it.
-     * Can confirm/deny if the object is valid, or modify the object before passing it on.
-     * See validation examples in the examples/ directory or in the documentation for `storeObject`
+     * Can confirm/deny if the object is valid, along with an optional error message if it is not
      *
      * @returns A boolean to confirm validity, false and an Error instance to deny validity,
      * or return true alongside an object to pass on instead of the original
-     * @default keyValidation
+     * @default () => true
      */
-    validate?: (value: any) => O | boolean | readonly [boolean] | readonly [false, Error];
+    validate?(value: Readonly<any>): boolean | readonly [boolean] | readonly [false, Error];
+    /**
+     * Modify an object before setting it in localStorage or reading it.
+     * Called after validate. Any valiation should be done in validate and not here
+     *
+     * @returns A boolean to confirm validity, false and an Error instance to deny validity,
+     * or return true alongside an object to pass on instead of the original
+     */
+    modify?(value: O): O;
     /**
      * Function to parse object. Defaults to `JSON.parse`.
      * Any validation should **NOT** be done here, but in the validate method
@@ -45,7 +52,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  * myObj.bar = 'xyz' // error
  * ```
  */
-export declare const keyValidation: <Obj extends Record<string, any>>(value: any, requiredKeys: readonly string[]) => boolean | readonly [boolean] | readonly [false, Error] | Obj;
+export declare const keyValidation: <Obj extends Record<string, any>>(value: any, requiredKeys: readonly string[]) => boolean | readonly [boolean] | readonly [false, Error];
 /**
  * Store a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
