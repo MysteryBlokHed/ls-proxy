@@ -52,7 +52,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  * myObj.bar = 'xyz' // error
  * ```
  */
-export declare const keyValidation: <Obj extends Record<string, any>>(value: any, requiredKeys: readonly string[]) => boolean | readonly [boolean] | readonly [false, Error];
+export declare const keyValidation: <O extends Record<string, any>>(value: any, requiredKeys: readonly string[]) => boolean | readonly [boolean] | readonly [false, Error];
 /**
  * Store a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
@@ -139,7 +139,7 @@ export declare const keyValidation: <Obj extends Record<string, any>>(value: any
  * console.log(myPerson.minor) // true
  * ```
  */
-export declare function storeObject<K extends string = string, O extends Record<K, any> = Record<K, any>>(lsKey: string, defaults: Readonly<O>, configuration?: StoreObjectConfig<O>): O;
+export declare function storeObject<O extends Record<string, any> = Record<string, any>>(lsKey: string, defaults: Readonly<O>, configuration?: StoreObjectConfig<O>): O;
 /** Configuration for storeSeparate */
 export interface StoreSeparateConfig {
     /**
@@ -172,6 +172,6 @@ export interface StoreSeparateConfig {
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-export declare function storeSeparate<K extends string = string, O extends Record<K, string> = Record<K, string>>(defaults: Readonly<O>, configuration?: StoreSeparateConfig): O;
+export declare function storeSeparate<O extends Record<string, string> = Record<string, string>>(defaults: Readonly<O>, configuration?: StoreSeparateConfig): O;
 
 export as namespace LSProxy;
