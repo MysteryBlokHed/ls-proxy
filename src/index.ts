@@ -23,7 +23,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    * @returns A boolean to confirm validity, false and an Error instance to deny validity,
    * or return true alongside an object to pass on instead of the original
    */
-  modify?(value: Readonly<O>): O
+  modify?(value: O): O
   /**
    * Function to parse object. Defaults to `JSON.parse`.
    * Any validation should **NOT** be done here, but in the validate method
