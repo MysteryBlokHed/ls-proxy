@@ -6,7 +6,7 @@ interface Person {
   minor: boolean
 }
 
-const myPerson = storeObject(
+const myPerson = storeObject<Person>(
   'myPerson',
   {
     name: 'Ellie',

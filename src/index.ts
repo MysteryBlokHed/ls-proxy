@@ -1,3 +1,5 @@
+type Keys<O extends Record<string, any>> = keyof O & string
+
 /** Configuration for storeObject */
 export interface StoreObjectConfig<O extends Record<string, any>> {
   /**
@@ -55,10 +57,10 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  * myObj.bar = 'xyz' // error
  * ```
  */
-export const keyValidation = <Obj extends Record<string, any>>(
+export const keyValidation = <O extends Record<string, any>>(
   value: any,
   requiredKeys: readonly string[],
-): ReturnType<Required<StoreObjectConfig<Obj>>['validate']> =>
+): ReturnType<Required<StoreObjectConfig<O>>['validate']> =>
   Object.keys(value).every(key => requiredKeys.includes(key)) &&
   requiredKeys.every(key => key in value)
 
@@ -165,8 +167,7 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
  * ```
  */
 export function storeObject<
-  K extends string = string,
-  O extends Record<K, any> = Record<K, any>,
+  O extends Record<string, any> = Record<string, any>,
 >(
   lsKey: string,
   defaults: Readonly<O>,
@@ -192,14 +193,14 @@ export function storeObject<
   } else object = checkParse(localStorage[lsKey])
 
   return new Proxy(object, {
-    set(target, key: K, value: string, receiver) {
+    set(target, key: Keys<O>, value: string, receiver) {
       const setResult = Reflect.set(target, key, value, receiver)
       localStorage[lsKey] = checkStringify(target)
 
       return setResult
     },
 
-    get(target, key: K, receiver) {
+    get(target, key: Keys<O>, receiver) {
       if (checkGets)
         target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
 
@@ -293,26 +294,25 @@ const defaultStoreSeparateConfig = ({
  * ```
  */
 export function storeSeparate<
-  K extends string = string,
-  O extends Record<K, string> = Record<K, string>,
+  O extends Record<string, string> = Record<string, string>,
 >(defaults: Readonly<O>, configuration: StoreSeparateConfig = {}): O {
   const { id, checkGets } = defaultStoreSeparateConfig(configuration)
   const object = { ...defaults } as O
 
   // Set defaults
-  for (const [key, value] of Object.entries(defaults) as [K, string][]) {
+  for (const [key, value] of Object.entries(defaults) as [Keys<O>, string][]) {
     const keyPrefix = addId(key, id)
     if (!localStorage[keyPrefix]) localStorage[keyPrefix] = value
     else object[key] = localStorage[keyPrefix]
   }
 
   return new Proxy(object, {
-    set(target, key: K, value: string, receiver) {
+    set(target, key: Keys<O>, value: string, receiver) {
       localStorage[addId(key, id)] = value
       return Reflect.set(target, key, value, receiver)
     },
 
-    get(target, key: K, receiver) {
+    get(target, key: Keys<O>, receiver) {
       if (checkGets) target[key] = localStorage[addId(key, id)] ?? defaults[key]
       return Reflect.get(target, key, receiver)
     },
