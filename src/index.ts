@@ -7,16 +7,23 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
   checkGets?: boolean
   /**
    * Validate an object before setting it in localStorage or reading it.
-   * Can confirm/deny if the object is valid, or modify the object before passing it on.
-   * See validation examples in the examples/ directory or in the documentation for `storeObject`
+   * Can confirm/deny if the object is valid, along with an optional error message if it is not
    *
    * @returns A boolean to confirm validity, false and an Error instance to deny validity,
    * or return true alongside an object to pass on instead of the original
-   * @default keyValidation
+   * @default () => true
    */
-  validate?: (
-    value: any,
-  ) => O | boolean | readonly [boolean] | readonly [false, Error]
+  validate?(
+    value: Readonly<any>,
+  ): boolean | readonly [boolean] | readonly [false, Error]
+  /**
+   * Modify an object before setting it in localStorage or reading it.
+   * Called after validate. Any valiation should be done in validate and not here
+   *
+   * @returns A boolean to confirm validity, false and an Error instance to deny validity,
+   * or return true alongside an object to pass on instead of the original
+   */
+  modify?(value: Readonly<O>): O
   /**
    * Function to parse object. Defaults to `JSON.parse`.
    * Any validation should **NOT** be done here, but in the validate method
@@ -58,12 +65,14 @@ export const keyValidation = <Obj extends Record<string, any>>(
 const defaultStoreObjectConfig = <O extends Record<string, any>>({
   checkGets,
   validate,
+  modify,
   parse,
   stringify,
 }: StoreObjectConfig<O>): Required<StoreObjectConfig<O>> => {
   return {
     checkGets: checkGets ?? true,
     validate: validate ?? (() => true),
+    modify: modify ?? (value => value),
     parse: parse ?? JSON.parse,
     stringify: stringify ?? JSON.stringify,
   }
@@ -163,17 +172,17 @@ export function storeObject<
   defaults: Readonly<O>,
   configuration: StoreObjectConfig<O> = {},
 ): O {
-  const { checkGets, validate, parse, stringify } =
+  const { checkGets, validate, modify, parse, stringify } =
     defaultStoreObjectConfig(configuration)
 
   const checkParse = (value: string): O => {
     const parsed = parse(value)
-    const valid = validOrThrow(validate(parsed), parsed, 'get', lsKey)
+    const valid = validOrThrow(validate, modify, parsed, 'get', lsKey)
     return valid
   }
 
   const checkStringify = (value: any): string =>
-    stringify(validOrThrow(validate(value), value, 'set', lsKey))
+    stringify(validOrThrow(validate, modify, value, 'set', lsKey))
 
   let object = { ...defaults } as O
 
@@ -199,8 +208,19 @@ export function storeObject<
   })
 }
 
+/**
+ * Validate and modify an object
+ *
+ * @param validate Return from the validate function
+ * @param modify Function to modify the object
+ * @param object The object to modify
+ * @param action Whether the object is being get or set
+ * @param lsKey The key in localStorage
+ * @returns The object if valid
+ */
 const validOrThrow = <O extends Record<string, any>>(
-  valid: ReturnType<Required<StoreObjectConfig<O>>['validate']>,
+  validate: Required<StoreObjectConfig<O>>['validate'],
+  modify: Required<StoreObjectConfig<O>>['modify'],
   object: Readonly<O>,
   action: 'get' | 'set',
   lsKey: string,
@@ -210,6 +230,8 @@ const validOrThrow = <O extends Record<string, any>>(
       ? `Validation failed while parsing ${lsKey} from localStorage`
       : `Validation failed while setting to ${lsKey} in localStorage`,
   )
+
+  const valid = validate(object)
 
   // Throw error on failure
   if (typeof valid === 'boolean') {
@@ -221,12 +243,9 @@ const validOrThrow = <O extends Record<string, any>>(
       if (valid.length === 2) throw valid[1]
       else throw error
     }
-  } else {
-    // Return is a new object
-    return valid as O
   }
 
-  return object
+  return modify(object)
 }
 
 /** Configuration for storeSeparate */

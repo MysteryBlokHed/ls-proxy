@@ -39,10 +39,11 @@ exports.storeSeparate = exports.storeObject = exports.keyValidation = void 0;
 const keyValidation = (value, requiredKeys) => Object.keys(value).every(key => requiredKeys.includes(key)) &&
     requiredKeys.every(key => key in value);
 exports.keyValidation = keyValidation;
-const defaultStoreObjectConfig = ({ checkGets, validate, parse, stringify, }) => {
+const defaultStoreObjectConfig = ({ checkGets, validate, modify, parse, stringify, }) => {
     return {
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
         validate: validate !== null && validate !== void 0 ? validate : (() => true),
+        modify: modify !== null && modify !== void 0 ? modify : (value => value),
         parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
         stringify: stringify !== null && stringify !== void 0 ? stringify : JSON.stringify,
     };
@@ -134,13 +135,13 @@ const defaultStoreObjectConfig = ({ checkGets, validate, parse, stringify, }) =>
  * ```
  */
 function storeObject(lsKey, defaults, configuration = {}) {
-    const { checkGets, validate, parse, stringify } = defaultStoreObjectConfig(configuration);
+    const { checkGets, validate, modify, parse, stringify } = defaultStoreObjectConfig(configuration);
     const checkParse = (value) => {
         const parsed = parse(value);
-        const valid = validOrThrow(validate(parsed), parsed, 'get', lsKey);
+        const valid = validOrThrow(validate, modify, parsed, 'get', lsKey);
         return valid;
     };
-    const checkStringify = (value) => stringify(validOrThrow(validate(value), value, 'set', lsKey));
+    const checkStringify = (value) => stringify(validOrThrow(validate, modify, value, 'set', lsKey));
     let object = Object.assign({}, defaults);
     // Update localStorage value
     if (!localStorage[lsKey]) {
@@ -163,10 +164,21 @@ function storeObject(lsKey, defaults, configuration = {}) {
     });
 }
 exports.storeObject = storeObject;
-const validOrThrow = (valid, object, action, lsKey) => {
+/**
+ * Validate and modify an object
+ *
+ * @param validate Return from the validate function
+ * @param modify Function to modify the object
+ * @param object The object to modify
+ * @param action Whether the object is being get or set
+ * @param lsKey The key in localStorage
+ * @returns The object if valid
+ */
+const validOrThrow = (validate, modify, object, action, lsKey) => {
     const error = new TypeError(action === 'get'
         ? `Validation failed while parsing ${lsKey} from localStorage`
         : `Validation failed while setting to ${lsKey} in localStorage`);
+    const valid = validate(object);
     // Throw error on failure
     if (typeof valid === 'boolean') {
         // Return is bool
@@ -182,11 +194,7 @@ const validOrThrow = (valid, object, action, lsKey) => {
                 throw error;
         }
     }
-    else {
-        // Return is a new object
-        return valid;
-    }
-    return object;
+    return modify(object);
 };
 const defaultStoreSeparateConfig = ({ id, checkGets, }) => {
     return {
