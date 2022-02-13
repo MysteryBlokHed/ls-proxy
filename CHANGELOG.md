@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Default functions for common validation use cases (key validation and basic type checking)
+
 ### Changed
 
 - Move modification ability of `validate` to new function for `storeObject`
