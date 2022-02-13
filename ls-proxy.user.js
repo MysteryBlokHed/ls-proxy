@@ -18,27 +18,58 @@ var exports = __webpack_exports__;
   \**********************/
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.storeSeparate = exports.storeObject = exports.keyValidation = void 0;
+exports.storeSeparate = exports.storeObject = exports.validateTypes = exports.validateKeys = void 0;
 /**
  * A function that can be used to validate that only expected keys are present on an object.
  * Meant to be used in a validate function for `storeObject`
+ *
  * @example
  * ```typescript
- * import { storeObject, keyValidation } from 'ls-proxy'
+ * import { storeObject, validateKeys } from 'ls-proxy'
  *
  * const myObj = storeObject(
  *   'myObj',
  *   { foo: 'bar' },
- *   { validate: value => keyValidation(value, ['foo']) },
+ *   { validate: value => validateKeys(value, ['foo']) },
  * )
  *
  * myObj.foo = 'abc' // no error
  * myObj.bar = 'xyz' // error
  * ```
  */
-const keyValidation = (value, requiredKeys) => Object.keys(value).every(key => requiredKeys.includes(key)) &&
+const validateKeys = (value, requiredKeys) => Object.keys(value).every(key => requiredKeys.includes(key)) &&
     requiredKeys.every(key => key in value);
-exports.keyValidation = keyValidation;
+exports.validateKeys = validateKeys;
+/**
+ * Validate that the types passed for an object are expected.
+ * Meant to be used in a validate function for `storeObject`
+ *
+ * @param value The unknown value to validate types of
+ * @param typesMap A map of expected keys for an object to expected types, checked like `typeof value[key] === typesMap[key]`
+ * @example
+ * ```typescript
+ * import { storeObject, validateTypes } from 'ls-proxy'
+ *
+ * const typesMap = {
+ *   onlyString: 'string',
+ *   onlyNumber: 'number',
+ * }
+ *
+ * const runtimeCheckedTypes = storeObject(
+ *   'runtimeCheckedTypes',
+ *   {
+ *     onlyString: 'abc',
+ *     onlyNumber: 123,
+ *   },
+ *   { validate: value => validateTypes(value, typesMap) },
+ * )
+ *
+ * runtimeCheckedTypes.onlyString = 'xyz' // Succeeds
+ * runtimeCheckedTypes.onlyNumber = 'abc' // Fails
+ * ```
+ */
+const validateTypes = (value, typesMap) => Object.entries(value).every(([key, value]) => typeof value === typesMap[key]);
+exports.validateTypes = validateTypes;
 const defaultStoreObjectConfig = ({ checkGets, validate, modify, parse, stringify, }) => {
     return {
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
@@ -78,7 +109,7 @@ const defaultStoreObjectConfig = ({ checkGets, validate, modify, parse, stringif
  * @example
  * ```typescript
  * // Validating that the expected keys exist and are the correct type
- * import { storeObject, keyValidation } from 'ls-proxy'
+ * import { storeObject, validateKeys } from 'ls-proxy'
  *
  * const myObj = storeObject(
  *   'myObj',
@@ -88,7 +119,7 @@ const defaultStoreObjectConfig = ({ checkGets, validate, modify, parse, stringif
  *   },
  *   {
  *     validate(value) {
- *       if (!keyValidation(value, ['someString', 'someNumber'])) return false
+ *       if (!validateKeys(value, ['someString', 'someNumber'])) return false
  *       if (typeof value.someString !== 'string') return false
  *       if (typeof value.someNumber !== 'number') return false
  *       return true

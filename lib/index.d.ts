@@ -1,3 +1,4 @@
+declare type Keys<O extends Record<string, any>> = keyof O & string;
 /** Configuration for storeObject */
 export interface StoreObjectConfig<O extends Record<string, any>> {
     /**
@@ -38,21 +39,51 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
 /**
  * A function that can be used to validate that only expected keys are present on an object.
  * Meant to be used in a validate function for `storeObject`
+ *
  * @example
  * ```typescript
- * import { storeObject, keyValidation } from 'ls-proxy'
+ * import { storeObject, validateKeys } from 'ls-proxy'
  *
  * const myObj = storeObject(
  *   'myObj',
  *   { foo: 'bar' },
- *   { validate: value => keyValidation(value, ['foo']) },
+ *   { validate: value => validateKeys(value, ['foo']) },
  * )
  *
  * myObj.foo = 'abc' // no error
  * myObj.bar = 'xyz' // error
  * ```
  */
-export declare const keyValidation: <O extends Record<string, any>>(value: any, requiredKeys: readonly string[]) => boolean | readonly [boolean] | readonly [false, Error];
+export declare const validateKeys: <O extends Record<string, any>>(value: Readonly<any>, requiredKeys: readonly string[]) => boolean | readonly [boolean] | readonly [false, Error];
+/**
+ * Validate that the types passed for an object are expected.
+ * Meant to be used in a validate function for `storeObject`
+ *
+ * @param value The unknown value to validate types of
+ * @param typesMap A map of expected keys for an object to expected types, checked like `typeof value[key] === typesMap[key]`
+ * @example
+ * ```typescript
+ * import { storeObject, validateTypes } from 'ls-proxy'
+ *
+ * const typesMap = {
+ *   onlyString: 'string',
+ *   onlyNumber: 'number',
+ * }
+ *
+ * const runtimeCheckedTypes = storeObject(
+ *   'runtimeCheckedTypes',
+ *   {
+ *     onlyString: 'abc',
+ *     onlyNumber: 123,
+ *   },
+ *   { validate: value => validateTypes(value, typesMap) },
+ * )
+ *
+ * runtimeCheckedTypes.onlyString = 'xyz' // Succeeds
+ * runtimeCheckedTypes.onlyNumber = 'abc' // Fails
+ * ```
+ */
+export declare const validateTypes: <O extends Record<string, any>>(value: Readonly<any>, typesMap: Record<Keys<O>, string>) => boolean;
 /**
  * Store a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
@@ -83,7 +114,7 @@ export declare const keyValidation: <O extends Record<string, any>>(value: any, 
  * @example
  * ```typescript
  * // Validating that the expected keys exist and are the correct type
- * import { storeObject, keyValidation } from 'ls-proxy'
+ * import { storeObject, validateKeys } from 'ls-proxy'
  *
  * const myObj = storeObject(
  *   'myObj',
@@ -93,7 +124,7 @@ export declare const keyValidation: <O extends Record<string, any>>(value: any, 
  *   },
  *   {
  *     validate(value) {
- *       if (!keyValidation(value, ['someString', 'someNumber'])) return false
+ *       if (!validateKeys(value, ['someString', 'someNumber'])) return false
  *       if (typeof value.someString !== 'string') return false
  *       if (typeof value.someNumber !== 'number') return false
  *       return true
@@ -173,5 +204,6 @@ export interface StoreSeparateConfig {
  * ```
  */
 export declare function storeSeparate<O extends Record<string, string> = Record<string, string>>(defaults: Readonly<O>, configuration?: StoreSeparateConfig): O;
+export {};
 
 export as namespace LSProxy;
