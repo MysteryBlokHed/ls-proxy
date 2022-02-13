@@ -1,4 +1,6 @@
-type Keys<O extends Record<string, any>> = keyof O & string
+import type { Keys } from './types'
+
+export { default as Validations } from './validations'
 
 /** Configuration for storeObject */
 export interface StoreObjectConfig<O extends Record<string, any>> {
@@ -39,65 +41,6 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    */
   stringify?: (value: any) => string
 }
-
-/**
- * A function that can be used to validate that only expected keys are present on an object.
- * Meant to be used in a validate function for `storeObject`
- *
- * @example
- * ```typescript
- * import { storeObject, validateKeys } from 'ls-proxy'
- *
- * const myObj = storeObject(
- *   'myObj',
- *   { foo: 'bar' },
- *   { validate: value => validateKeys(value, ['foo']) },
- * )
- *
- * myObj.foo = 'abc' // no error
- * myObj.bar = 'xyz' // error
- * ```
- */
-export const validateKeys = <O extends Record<string, any>>(
-  value: Readonly<any>,
-  requiredKeys: readonly string[],
-): ReturnType<Required<StoreObjectConfig<O>>['validate']> =>
-  Object.keys(value).every(key => requiredKeys.includes(key)) &&
-  requiredKeys.every(key => key in value)
-
-/**
- * Validate that the types passed for an object are expected.
- * Meant to be used in a validate function for `storeObject`
- *
- * @param value The unknown value to validate types of
- * @param typesMap A map of expected keys for an object to expected types, checked like `typeof value[key] === typesMap[key]`
- * @example
- * ```typescript
- * import { storeObject, validateTypes } from 'ls-proxy'
- *
- * const typesMap = {
- *   onlyString: 'string',
- *   onlyNumber: 'number',
- * }
- *
- * const runtimeCheckedTypes = storeObject(
- *   'runtimeCheckedTypes',
- *   {
- *     onlyString: 'abc',
- *     onlyNumber: 123,
- *   },
- *   { validate: value => validateTypes(value, typesMap) },
- * )
- *
- * runtimeCheckedTypes.onlyString = 'xyz' // Succeeds
- * runtimeCheckedTypes.onlyNumber = 'abc' // Fails
- * ```
- */
-export const validateTypes = <O extends Record<string, any>>(
-  value: Readonly<any>,
-  typesMap: Record<Keys<O>, string>,
-) =>
-  Object.entries(value).every(([key, value]) => typeof value === typesMap[key])
 
 const defaultStoreObjectConfig = <O extends Record<string, any>>({
   checkGets,

@@ -1,4 +1,4 @@
-import { storeObject, validateKeys, validateTypes } from 'ls-proxy'
+import { storeObject, Validations } from 'ls-proxy'
 
 interface Person {
   name: string
@@ -18,7 +18,7 @@ const myObject = storeObject<Person>(
   },
   {
     validate: value =>
-      validateKeys(value, personKeys) && validateTypes(value, typesMap),
+      Validations.keys(value, personKeys) && Validations.types(value, typesMap),
   },
 )
 

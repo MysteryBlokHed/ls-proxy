@@ -9,8 +9,100 @@
 
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./lib/validations.js":
+/*!****************************!*\
+  !*** ./lib/validations.js ***!
+  \****************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var Validations;
+(function (Validations) {
+    /**
+     * Validate that only expected keys are present on an object
+     *
+     * @example
+     * ```typescript
+     * import { storeObject, Validations } from 'ls-proxy'
+     *
+     * const myObj = storeObject(
+     *   'myObj',
+     *   { foo: 'bar' },
+     *   { validate: value => Validations.keys(value, ['foo']) },
+     * )
+     *
+     * myObj.foo = 'abc' // no error
+     * myObj.bar = 'xyz' // error
+     * ```
+     */
+    Validations.keys = (value, requiredKeys) => Object.keys(value).every(key => requiredKeys.includes(key)) &&
+        requiredKeys.every(key => key in value);
+    /**
+     * Validate that the types passed for an object are expected
+     *
+     * @param value The unknown value to validate types of
+     * @param typesMap A map of expected keys for an object to expected types, checked like `typeof value[key] === typesMap[key]`
+     * @example
+     * ```typescript
+     * import { storeObject, Validations } from 'ls-proxy'
+     *
+     * const typesMap = {
+     *   onlyString: 'string',
+     *   onlyNumber: 'number',
+     * }
+     *
+     * const runtimeCheckedTypes = storeObject(
+     *   'runtimeCheckedTypes',
+     *   {
+     *     onlyString: 'abc',
+     *     onlyNumber: 123,
+     *   },
+     *   { validate: value => Validations.types(value, typesMap) },
+     * )
+     *
+     * runtimeCheckedTypes.onlyString = 'xyz' // Succeeds
+     * runtimeCheckedTypes.onlyNumber = 'abc' // Fails
+     * ```
+     */
+    Validations.types = (value, typesMap) => Object.entries(value).every(([key, value]) => typeof value === typesMap[key]);
+})(Validations || (Validations = {}));
+exports["default"] = Validations;
+
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
 var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it uses a non-standard name for the exports (exports).
+// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
 var exports = __webpack_exports__;
 /*!**********************!*\
@@ -18,58 +110,9 @@ var exports = __webpack_exports__;
   \**********************/
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.storeSeparate = exports.storeObject = exports.validateTypes = exports.validateKeys = void 0;
-/**
- * A function that can be used to validate that only expected keys are present on an object.
- * Meant to be used in a validate function for `storeObject`
- *
- * @example
- * ```typescript
- * import { storeObject, validateKeys } from 'ls-proxy'
- *
- * const myObj = storeObject(
- *   'myObj',
- *   { foo: 'bar' },
- *   { validate: value => validateKeys(value, ['foo']) },
- * )
- *
- * myObj.foo = 'abc' // no error
- * myObj.bar = 'xyz' // error
- * ```
- */
-const validateKeys = (value, requiredKeys) => Object.keys(value).every(key => requiredKeys.includes(key)) &&
-    requiredKeys.every(key => key in value);
-exports.validateKeys = validateKeys;
-/**
- * Validate that the types passed for an object are expected.
- * Meant to be used in a validate function for `storeObject`
- *
- * @param value The unknown value to validate types of
- * @param typesMap A map of expected keys for an object to expected types, checked like `typeof value[key] === typesMap[key]`
- * @example
- * ```typescript
- * import { storeObject, validateTypes } from 'ls-proxy'
- *
- * const typesMap = {
- *   onlyString: 'string',
- *   onlyNumber: 'number',
- * }
- *
- * const runtimeCheckedTypes = storeObject(
- *   'runtimeCheckedTypes',
- *   {
- *     onlyString: 'abc',
- *     onlyNumber: 123,
- *   },
- *   { validate: value => validateTypes(value, typesMap) },
- * )
- *
- * runtimeCheckedTypes.onlyString = 'xyz' // Succeeds
- * runtimeCheckedTypes.onlyNumber = 'abc' // Fails
- * ```
- */
-const validateTypes = (value, typesMap) => Object.entries(value).every(([key, value]) => typeof value === typesMap[key]);
-exports.validateTypes = validateTypes;
+exports.storeSeparate = exports.storeObject = exports.Validations = void 0;
+var validations_1 = __webpack_require__(/*! ./validations */ "./lib/validations.js");
+Object.defineProperty(exports, "Validations", ({ enumerable: true, get: function () { return validations_1.default; } }));
 const defaultStoreObjectConfig = ({ checkGets, validate, modify, parse, stringify, }) => {
     return {
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
