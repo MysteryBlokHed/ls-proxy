@@ -19,6 +19,7 @@
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+/** Validations meant to be used with `storeObject`'s validate function */
 var Validations;
 (function (Validations) {
     /**

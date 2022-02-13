@@ -1,6 +1,7 @@
 import type { StoreObjectConfig } from '.'
 import type { Keys } from './types'
 
+/** Validations meant to be used with `storeObject`'s validate function */
 namespace Validations {
   /**
    * Validate that only expected keys are present on an object
