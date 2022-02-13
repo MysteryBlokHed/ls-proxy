@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Default functions for common validation use cases (key validation and basic type checking)
+- Default functions for common validation use cases (key validation and basic type checking).
+  See `Validations` namespace
 
 ### Changed
 
