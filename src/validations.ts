@@ -23,7 +23,7 @@ namespace Validations {
   export const keys = <O extends Record<string, any>>(
     value: Readonly<any>,
     requiredKeys: readonly string[],
-  ): ReturnType<Required<StoreObjectConfig<O>>['validate']> =>
+  ) =>
     Object.keys(value).every(key => requiredKeys.includes(key)) &&
     requiredKeys.every(key => key in value)
 
@@ -56,7 +56,7 @@ namespace Validations {
    */
   export const types = <O extends Record<string, any>>(
     value: Readonly<any>,
-    typesMap: Record<Keys<O>, string>,
+    typesMap: Readonly<Record<Keys<O>, string>>,
   ) =>
     Object.entries(value).every(
       ([key, value]) => typeof value === typesMap[key],

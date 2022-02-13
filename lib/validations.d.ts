@@ -1,4 +1,3 @@
-import type { StoreObjectConfig } from '.';
 import type { Keys } from './types';
 /** Validations meant to be used with `storeObject`'s validate function */
 declare namespace Validations {
@@ -19,7 +18,7 @@ declare namespace Validations {
      * myObj.bar = 'xyz' // error
      * ```
      */
-    const keys: <O extends Record<string, any>>(value: Readonly<any>, requiredKeys: readonly string[]) => boolean | readonly [boolean] | readonly [false, Error];
+    const keys: <O extends Record<string, any>>(value: Readonly<any>, requiredKeys: readonly string[]) => boolean;
     /**
      * Validate that the types passed for an object are expected
      *
@@ -47,6 +46,6 @@ declare namespace Validations {
      * runtimeCheckedTypes.onlyNumber = 'abc' // Fails
      * ```
      */
-    const types: <O extends Record<string, any>>(value: Readonly<any>, typesMap: Record<Keys<O>, string>) => boolean;
+    const types: <O extends Record<string, any>>(value: Readonly<any>, typesMap: Readonly<Record<Keys<O>, string>>) => boolean;
 }
 export default Validations;
