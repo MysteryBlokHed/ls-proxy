@@ -228,6 +228,7 @@ export function storeObject<
             filterWanted(parse(localStorage[lsKey]), false),
             'get',
           )[key]
+          vot(target, 'get')
         } else {
           target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
         }
