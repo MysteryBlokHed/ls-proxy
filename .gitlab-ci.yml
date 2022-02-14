@@ -4,6 +4,7 @@ stages:
   - install
   - lint
   - build
+  - test
   - deploy
 
 cache:
@@ -32,12 +33,18 @@ lint:
   script:
     - yarn lint --check
 
-test_build:
+build:
   stage: build
   rules: [changes: *changes]
   script:
     - export NODE_OPTIONS=--openssl-legacy-provider
     - yarn build
+
+test:
+  stage: test
+  rules: [changes: *changes]
+  script:
+    - yarn test
 
 pages:
   stage: deploy
