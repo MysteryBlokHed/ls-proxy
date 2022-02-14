@@ -11,8 +11,14 @@ describe('validation for storeObject', () => {
       { validate: value => !(value.foo === 'baz') },
     )
 
+    // Setting
     expect(() => (myObj.foo = 'abc')).not.toThrow()
     expect(() => (myObj.foo = 'baz')).toThrowError(TypeError)
+
+    // Getting
+    expect(() => myObj.foo).not.toThrow()
+    localStorage.myObj = JSON.stringify({ foo: 'baz' })
+    expect(() => myObj.foo).toThrowError(TypeError)
   })
 
   it('throws user-provided errors when provided', () => {
@@ -28,8 +34,14 @@ describe('validation for storeObject', () => {
       },
     )
 
+    // Setting
     expect(() => (myObj.foo = 'abc')).not.toThrow()
     expect(() => (myObj.foo = 'baz')).toThrowError(CustomError)
+
+    // Getting
+    expect(() => myObj.foo).not.toThrow()
+    localStorage.myObj = JSON.stringify({ foo: 'baz' })
+    expect(() => myObj.foo).toThrowError(CustomError)
   })
 })
 
@@ -42,9 +54,17 @@ describe('validations provided by ls-proxy', () => {
       { validate: value => Validations.keys(value, ['foo']) },
     )
 
+    // Setting
     expect(() => (myObj.foo = 'baz')).not.toThrow()
     // @ts-ignore
     expect(() => (myObj.abc = 123)).toThrowError(TypeError)
+
+    // Getting
+    expect(() => myObj.foo).not.toThrow()
+    localStorage.myObj = JSON.stringify({ foo: 'baz', abc: 123 })
+    expect(() => myObj.foo).toThrowError(TypeError)
+    // @ts-ignore
+    expect(() => myObj.baz).toThrowError(TypeError)
   })
 
   it('types validation works as intended', () => {
@@ -55,8 +75,14 @@ describe('validations provided by ls-proxy', () => {
       { validate: value => Validations.types(value, { foo: 'string' }) },
     )
 
+    // Setting
     expect(() => (myObj.foo = 'baz')).not.toThrow()
     // @ts-ignore
     expect(() => (myObj.foo = 123)).toThrowError(TypeError)
+
+    // Getting
+    expect(() => myObj.foo).not.toThrow()
+    localStorage.myObj = JSON.stringify({ foo: 123 })
+    expect(() => myObj.foo).toThrowError(TypeError)
   })
 })
