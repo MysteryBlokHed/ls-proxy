@@ -212,12 +212,14 @@ const defaultStoreObjectConfig = ({ checkGets, partial, validate, modify, parse,
  */
 function storeObject(lsKey, defaults, configuration = {}) {
     const { checkGets, partial, validate, modify, parse, stringify } = defaultStoreObjectConfig(configuration);
+    /** Call validOrThrow with relevant parameters by default */
+    const vot = (value, action = 'set') => validOrThrow(validate, modify, value, action, lsKey);
     const checkParse = (value) => {
         const parsed = parse(value);
-        const valid = validOrThrow(validate, modify, parsed, 'get', lsKey);
+        const valid = vot(parsed, 'get');
         return valid;
     };
-    const checkStringify = (value) => stringify(validOrThrow(validate, modify, value, 'set', lsKey));
+    const checkStringify = (value) => stringify(vot(value));
     let object = Object.assign({}, defaults);
     // Update localStorage value or read existing values
     if (!localStorage[lsKey]) {
@@ -230,7 +232,7 @@ function storeObject(lsKey, defaults, configuration = {}) {
         // Set to value found in localStorage if it exists, otherwise use provided default
         key => { var _a; return (desiredObject[key] = (_a = checkParsed[key]) !== null && _a !== void 0 ? _a : defaults[key]); });
         object = desiredObject;
-        const validModified = validOrThrow(validate, modify, object, 'set', lsKey);
+        const validModified = vot(object);
         localStorage[lsKey] = stringify(Object.assign(Object.assign({}, checkParsed), validModified));
     }
     else {
@@ -240,7 +242,7 @@ function storeObject(lsKey, defaults, configuration = {}) {
         set(target, key, value, receiver) {
             const setResult = Reflect.set(target, key, value, receiver);
             if (partial) {
-                const validModified = validOrThrow(validate, modify, target, 'set', lsKey);
+                const validModified = vot(target);
                 localStorage[lsKey] = stringify(Object.assign(Object.assign({}, parse(localStorage[lsKey])), validModified));
             }
             else

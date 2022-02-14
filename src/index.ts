@@ -164,14 +164,17 @@ export function storeObject<
   const { checkGets, partial, validate, modify, parse, stringify } =
     defaultStoreObjectConfig(configuration)
 
+  /** Call validOrThrow with relevant parameters by default */
+  const vot = (value: any, action: 'get' | 'set' = 'set') =>
+    validOrThrow(validate, modify, value, action, lsKey)
+
   const checkParse = (value: string): O => {
     const parsed = parse(value)
-    const valid = validOrThrow(validate, modify, parsed, 'get', lsKey)
+    const valid = vot(parsed, 'get')
     return valid
   }
 
-  const checkStringify = (value: any): string =>
-    stringify(validOrThrow(validate, modify, value, 'set', lsKey))
+  const checkStringify = (value: any): string => stringify(vot(value))
 
   let object = { ...defaults } as O
 
@@ -189,7 +192,7 @@ export function storeObject<
     )
 
     object = desiredObject as O
-    const validModified = validOrThrow(validate, modify, object, 'set', lsKey)
+    const validModified = vot(object)
     localStorage[lsKey] = stringify({ ...checkParsed, ...validModified })
   } else {
     object = checkParse(localStorage[lsKey])
@@ -199,13 +202,7 @@ export function storeObject<
     set(target, key: Keys<O>, value: string, receiver) {
       const setResult = Reflect.set(target, key, value, receiver)
       if (partial) {
-        const validModified = validOrThrow(
-          validate,
-          modify,
-          target,
-          'set',
-          lsKey,
-        )
+        const validModified = vot(target)
         localStorage[lsKey] = stringify({
           ...parse(localStorage[lsKey]),
           ...validModified,
