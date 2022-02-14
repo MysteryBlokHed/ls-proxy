@@ -176,24 +176,34 @@ export function storeObject<
 
   const checkStringify = (value: any): string => stringify(vot(value))
 
+  const filterWanted = (obj: Readonly<any>, defaultIfUndefined = true) => {
+    let desiredObject = {} as Partial<O>
+
+    // Only read existing values for desired keys
+    ;(Object.keys(defaults) as Keys<O>[]).forEach(
+      // Set to value found in localStorage if it exists, otherwise use provided default
+      key =>
+        (desiredObject[key] = defaultIfUndefined
+          ? // Use default if defaultInDefined
+            obj[key] ?? defaults[key]
+          : // Use given value even if undefined
+            obj[key]),
+    )
+
+    return desiredObject as O
+  }
+
   let object = { ...defaults } as O
 
   // Update localStorage value or read existing values
   if (!localStorage[lsKey]) {
     localStorage[lsKey] = checkStringify(defaults)
   } else if (partial) {
-    let desiredObject = {} as Partial<O>
-    const checkParsed = checkParse(localStorage[lsKey])
+    const current = parse(localStorage[lsKey])
+    object = filterWanted(current)
 
-    // Only read existing values for desired keys
-    ;(Object.keys(defaults) as Keys<O>[]).forEach(
-      // Set to value found in localStorage if it exists, otherwise use provided default
-      key => (desiredObject[key] = checkParsed[key] ?? defaults[key]),
-    )
-
-    object = desiredObject as O
     const validModified = vot(object)
-    localStorage[lsKey] = stringify({ ...checkParsed, ...validModified })
+    localStorage[lsKey] = stringify({ ...current, ...validModified })
   } else {
     object = checkParse(localStorage[lsKey])
   }
@@ -213,8 +223,16 @@ export function storeObject<
     },
 
     get(target, key: Keys<O>, receiver) {
-      if (checkGets)
-        target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
+      if (checkGets) {
+        if (partial) {
+          target[key] = vot(
+            filterWanted(parse(localStorage[lsKey]), false),
+            'get',
+          )[key]
+        } else {
+          target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
+        }
+      }
 
       return Reflect.get(target, key, receiver)
     },

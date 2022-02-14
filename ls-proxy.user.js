@@ -220,20 +220,30 @@ function storeObject(lsKey, defaults, configuration = {}) {
         return valid;
     };
     const checkStringify = (value) => stringify(vot(value));
+    const filterWanted = (obj, defaultIfUndefined = true) => {
+        let desiredObject = {};
+        Object.keys(defaults).forEach(
+        // Set to value found in localStorage if it exists, otherwise use provided default
+        key => {
+            var _a;
+            return (desiredObject[key] = defaultIfUndefined
+                ? // Use default if defaultInDefined
+                    (_a = obj[key]) !== null && _a !== void 0 ? _a : defaults[key]
+                : // Use given value even if undefined
+                    obj[key]);
+        });
+        return desiredObject;
+    };
     let object = Object.assign({}, defaults);
     // Update localStorage value or read existing values
     if (!localStorage[lsKey]) {
         localStorage[lsKey] = checkStringify(defaults);
     }
     else if (partial) {
-        let desiredObject = {};
-        const checkParsed = checkParse(localStorage[lsKey]);
-        Object.keys(defaults).forEach(
-        // Set to value found in localStorage if it exists, otherwise use provided default
-        key => { var _a; return (desiredObject[key] = (_a = checkParsed[key]) !== null && _a !== void 0 ? _a : defaults[key]); });
-        object = desiredObject;
+        const current = parse(localStorage[lsKey]);
+        object = filterWanted(current);
         const validModified = vot(object);
-        localStorage[lsKey] = stringify(Object.assign(Object.assign({}, checkParsed), validModified));
+        localStorage[lsKey] = stringify(Object.assign(Object.assign({}, current), validModified));
     }
     else {
         object = checkParse(localStorage[lsKey]);
@@ -251,8 +261,14 @@ function storeObject(lsKey, defaults, configuration = {}) {
         },
         get(target, key, receiver) {
             var _a;
-            if (checkGets)
-                target[key] = (_a = checkParse(localStorage[lsKey])[key]) !== null && _a !== void 0 ? _a : defaults[key];
+            if (checkGets) {
+                if (partial) {
+                    target[key] = vot(filterWanted(parse(localStorage[lsKey]), false), 'get')[key];
+                }
+                else {
+                    target[key] = (_a = checkParse(localStorage[lsKey])[key]) !== null && _a !== void 0 ? _a : defaults[key];
+                }
+            }
             return Reflect.get(target, key, receiver);
         },
     });
