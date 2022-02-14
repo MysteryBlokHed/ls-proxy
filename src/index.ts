@@ -10,6 +10,17 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    */
   checkGets?: boolean
   /**
+   * Whether the stored object only contains/stores *some* of the keys on the serialized object.
+   * This is useful if you want an object to look at only some keys of a localStorage object
+   * without overwriting the other ones.
+   *
+   * It's important to note that passing this option effectively enables a key validation of sorts;
+   * any keys that were not passed are ignored and not passed to validate or modify (if these methods are defined)
+   * @default false
+   */
+  partial?: boolean
+
+  /**
    * Validate an object before setting it in localStorage or reading it.
    * Can confirm/deny if the object is valid, along with an optional error message if it is not
    *
@@ -44,6 +55,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
 
 const defaultStoreObjectConfig = <O extends Record<string, any>>({
   checkGets,
+  partial,
   validate,
   modify,
   parse,
@@ -51,6 +63,7 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
 }: StoreObjectConfig<O>): Required<StoreObjectConfig<O>> => {
   return {
     checkGets: checkGets ?? true,
+    partial: partial ?? false,
     validate: validate ?? (() => true),
     modify: modify ?? (value => value),
     parse: parse ?? JSON.parse,
@@ -109,7 +122,7 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
  *
  * @example
  * ```typescript
- * // Validation to automatically change a key based on another
+ * // Automatically change a key based on another
  * import { storeObject } from 'ls-proxy'
  *
  * interface Person {
@@ -151,36 +164,78 @@ export function storeObject<
   defaults: Readonly<O>,
   configuration: StoreObjectConfig<O> = {},
 ): O {
-  const { checkGets, validate, modify, parse, stringify } =
+  const { checkGets, partial, validate, modify, parse, stringify } =
     defaultStoreObjectConfig(configuration)
+
+  /** Call validOrThrow with relevant parameters by default */
+  const vot = (value: any, action: 'get' | 'set' = 'set') =>
+    validOrThrow(validate, modify, value, action, lsKey)
 
   const checkParse = (value: string): O => {
     const parsed = parse(value)
-    const valid = validOrThrow(validate, modify, parsed, 'get', lsKey)
+    const valid = vot(parsed, 'get')
     return valid
   }
 
-  const checkStringify = (value: any): string =>
-    stringify(validOrThrow(validate, modify, value, 'set', lsKey))
+  const checkStringify = (value: any): string => stringify(vot(value))
+
+  const filterWanted = (obj: Readonly<any>, defaultIfUndefined = true) => {
+    let desiredObject = {} as Partial<O>
+
+    // Only read existing values for desired keys
+    ;(Object.keys(defaults) as Keys<O>[]).forEach(
+      // Set to value found in localStorage if it exists, otherwise use provided default
+      key =>
+        (desiredObject[key] = defaultIfUndefined
+          ? // Use default if defaultInDefined
+            obj[key] ?? defaults[key]
+          : // Use given value even if undefined
+            obj[key]),
+    )
+
+    return desiredObject as O
+  }
 
   let object = { ...defaults } as O
 
-  // Update localStorage value
+  // Update localStorage value or read existing values
   if (!localStorage[lsKey]) {
     localStorage[lsKey] = checkStringify(defaults)
-  } else object = checkParse(localStorage[lsKey])
+  } else if (partial) {
+    const current = parse(localStorage[lsKey])
+    object = filterWanted(current)
+
+    const validModified = vot(object)
+    localStorage[lsKey] = stringify({ ...current, ...validModified })
+  } else {
+    object = checkParse(localStorage[lsKey])
+  }
 
   return new Proxy(object, {
     set(target, key: Keys<O>, value: string, receiver) {
       const setResult = Reflect.set(target, key, value, receiver)
-      localStorage[lsKey] = checkStringify(target)
+      if (partial) {
+        const validModified = vot(target)
+        localStorage[lsKey] = stringify({
+          ...parse(localStorage[lsKey]),
+          ...validModified,
+        })
+      } else localStorage[lsKey] = checkStringify(target)
 
       return setResult
     },
 
     get(target, key: Keys<O>, receiver) {
-      if (checkGets)
-        target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
+      if (checkGets) {
+        if (partial) {
+          target[key] = vot(
+            filterWanted(parse(localStorage[lsKey]), false),
+            'get',
+          )[key]
+        } else {
+          target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
+        }
+      }
 
       return Reflect.get(target, key, receiver)
     },

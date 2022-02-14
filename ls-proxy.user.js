@@ -114,9 +114,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.storeSeparate = exports.storeObject = exports.Validations = void 0;
 var validations_1 = __webpack_require__(/*! ./validations */ "./lib/validations.js");
 Object.defineProperty(exports, "Validations", ({ enumerable: true, get: function () { return validations_1.default; } }));
-const defaultStoreObjectConfig = ({ checkGets, validate, modify, parse, stringify, }) => {
+const defaultStoreObjectConfig = ({ checkGets, partial, validate, modify, parse, stringify, }) => {
     return {
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
+        partial: partial !== null && partial !== void 0 ? partial : false,
         validate: validate !== null && validate !== void 0 ? validate : (() => true),
         modify: modify !== null && modify !== void 0 ? modify : (value => value),
         parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
@@ -174,7 +175,7 @@ const defaultStoreObjectConfig = ({ checkGets, validate, modify, parse, stringif
  *
  * @example
  * ```typescript
- * // Validation to automatically change a key based on another
+ * // Automatically change a key based on another
  * import { storeObject } from 'ls-proxy'
  *
  * interface Person {
@@ -210,30 +211,64 @@ const defaultStoreObjectConfig = ({ checkGets, validate, modify, parse, stringif
  * ```
  */
 function storeObject(lsKey, defaults, configuration = {}) {
-    const { checkGets, validate, modify, parse, stringify } = defaultStoreObjectConfig(configuration);
+    const { checkGets, partial, validate, modify, parse, stringify } = defaultStoreObjectConfig(configuration);
+    /** Call validOrThrow with relevant parameters by default */
+    const vot = (value, action = 'set') => validOrThrow(validate, modify, value, action, lsKey);
     const checkParse = (value) => {
         const parsed = parse(value);
-        const valid = validOrThrow(validate, modify, parsed, 'get', lsKey);
+        const valid = vot(parsed, 'get');
         return valid;
     };
-    const checkStringify = (value) => stringify(validOrThrow(validate, modify, value, 'set', lsKey));
+    const checkStringify = (value) => stringify(vot(value));
+    const filterWanted = (obj, defaultIfUndefined = true) => {
+        let desiredObject = {};
+        Object.keys(defaults).forEach(
+        // Set to value found in localStorage if it exists, otherwise use provided default
+        key => {
+            var _a;
+            return (desiredObject[key] = defaultIfUndefined
+                ? // Use default if defaultInDefined
+                    (_a = obj[key]) !== null && _a !== void 0 ? _a : defaults[key]
+                : // Use given value even if undefined
+                    obj[key]);
+        });
+        return desiredObject;
+    };
     let object = Object.assign({}, defaults);
-    // Update localStorage value
+    // Update localStorage value or read existing values
     if (!localStorage[lsKey]) {
         localStorage[lsKey] = checkStringify(defaults);
     }
-    else
+    else if (partial) {
+        const current = parse(localStorage[lsKey]);
+        object = filterWanted(current);
+        const validModified = vot(object);
+        localStorage[lsKey] = stringify(Object.assign(Object.assign({}, current), validModified));
+    }
+    else {
         object = checkParse(localStorage[lsKey]);
+    }
     return new Proxy(object, {
         set(target, key, value, receiver) {
             const setResult = Reflect.set(target, key, value, receiver);
-            localStorage[lsKey] = checkStringify(target);
+            if (partial) {
+                const validModified = vot(target);
+                localStorage[lsKey] = stringify(Object.assign(Object.assign({}, parse(localStorage[lsKey])), validModified));
+            }
+            else
+                localStorage[lsKey] = checkStringify(target);
             return setResult;
         },
         get(target, key, receiver) {
             var _a;
-            if (checkGets)
-                target[key] = (_a = checkParse(localStorage[lsKey])[key]) !== null && _a !== void 0 ? _a : defaults[key];
+            if (checkGets) {
+                if (partial) {
+                    target[key] = vot(filterWanted(parse(localStorage[lsKey]), false), 'get')[key];
+                }
+                else {
+                    target[key] = (_a = checkParse(localStorage[lsKey])[key]) !== null && _a !== void 0 ? _a : defaults[key];
+                }
+            }
             return Reflect.get(target, key, receiver);
         },
     });
