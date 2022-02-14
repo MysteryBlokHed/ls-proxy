@@ -132,7 +132,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  * console.log(myPerson.minor) // true
  * ```
  */
-export declare function storeObject<O extends Record<string, any> = Record<string, any>>(lsKey: string, defaults: Readonly<O>, configuration?: StoreObjectConfig<O>): O;
+export declare function storeObject<O extends Record<string, any> = Record<string, any>>(lsKey: string, defaults: O, configuration?: StoreObjectConfig<O>): O;
 /** Configuration for storeSeparate */
 export interface StoreSeparateConfig {
     /**
@@ -165,6 +165,6 @@ export interface StoreSeparateConfig {
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-export declare function storeSeparate<O extends Record<string, string> = Record<string, string>>(defaults: Readonly<O>, configuration?: StoreSeparateConfig): O;
+export declare function storeSeparate<O extends Record<string, string> = Record<string, string>>(defaults: O, configuration?: StoreSeparateConfig): O;
 
 export as namespace LSProxy;

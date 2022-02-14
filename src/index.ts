@@ -159,11 +159,7 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
  */
 export function storeObject<
   O extends Record<string, any> = Record<string, any>,
->(
-  lsKey: string,
-  defaults: Readonly<O>,
-  configuration: StoreObjectConfig<O> = {},
-): O {
+>(lsKey: string, defaults: O, configuration: StoreObjectConfig<O> = {}): O {
   const { checkGets, partial, validate, modify, parse, stringify } =
     defaultStoreObjectConfig(configuration)
 
@@ -232,6 +228,7 @@ export function storeObject<
             filterWanted(parse(localStorage[lsKey]), false),
             'get',
           )[key]
+          vot(target, 'get')
         } else {
           target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
         }
@@ -328,7 +325,7 @@ const defaultStoreSeparateConfig = ({
  */
 export function storeSeparate<
   O extends Record<string, string> = Record<string, string>,
->(defaults: Readonly<O>, configuration: StoreSeparateConfig = {}): O {
+>(defaults: O, configuration: StoreSeparateConfig = {}): O {
   const { id, checkGets } = defaultStoreSeparateConfig(configuration)
   const object = { ...defaults } as O
 

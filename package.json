@@ -17,16 +17,25 @@
   "scripts": {
     "build": "tsc && node update-dts.js && webpack",
     "dev": "nodemon -w src -e ts --exec \"yarn build || exit 1\"",
+    "test": "jest",
     "lint": "prettier \"**/*.{js,ts,json,md,yml}\"",
     "doc": "typedoc",
     "release": "yarn build --mode production && git add . && git commit -m \":bookmark: Release <version>\" --edit"
   },
+  "jest": {
+    "verbose": true,
+    "preset": "ts-jest",
+    "testEnvironment": "jsdom"
+  },
   "devDependencies": {
     "@types/greasemonkey": "^4.0.2",
+    "@types/jest": "^27.4.0",
     "greasetools": "^0.2.0",
+    "jest": "^27.5.1",
     "nodemon": "^2.0.13",
     "prettier": "^2.4.1",
     "terser-webpack-plugin": "^5.2.4",
+    "ts-jest": "^27.1.3",
     "typedoc": "^0.22.11",
     "typescript": "^4.4.4",
     "webpack": "^5.58.2",

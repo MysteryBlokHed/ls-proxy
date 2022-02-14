@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Option to store multiple objects under the same localStorage key (see `partial` parameter for `StoreObjectConfig`
   or `different-keys-same-object.ts` in examples)
+- Testing with Jest
 - Default functions for common validation use cases (key validation and basic type checking).
   See `Validations` namespace
 

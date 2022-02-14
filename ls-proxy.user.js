@@ -264,6 +264,7 @@ function storeObject(lsKey, defaults, configuration = {}) {
             if (checkGets) {
                 if (partial) {
                     target[key] = vot(filterWanted(parse(localStorage[lsKey]), false), 'get')[key];
+                    vot(target, 'get');
                 }
                 else {
                     target[key] = (_a = checkParse(localStorage[lsKey])[key]) !== null && _a !== void 0 ? _a : defaults[key];
