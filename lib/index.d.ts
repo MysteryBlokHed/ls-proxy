@@ -7,6 +7,13 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
      */
     checkGets?: boolean;
     /**
+     * Whether the stored object only contains/stores *some* of the keys on the serialized object.
+     * This is useful if you want an object to look at only some keys of a localStorage object
+     * without overwriting the other ones
+     * @default false
+     */
+    partial?: boolean;
+    /**
      * Validate an object before setting it in localStorage or reading it.
      * Can confirm/deny if the object is valid, along with an optional error message if it is not
      *

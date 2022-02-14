@@ -10,6 +10,14 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    */
   checkGets?: boolean
   /**
+   * Whether the stored object only contains/stores *some* of the keys on the serialized object.
+   * This is useful if you want an object to look at only some keys of a localStorage object
+   * without overwriting the other ones
+   * @default false
+   */
+  partial?: boolean
+
+  /**
    * Validate an object before setting it in localStorage or reading it.
    * Can confirm/deny if the object is valid, along with an optional error message if it is not
    *
@@ -44,6 +52,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
 
 const defaultStoreObjectConfig = <O extends Record<string, any>>({
   checkGets,
+  partial,
   validate,
   modify,
   parse,
@@ -51,6 +60,7 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
 }: StoreObjectConfig<O>): Required<StoreObjectConfig<O>> => {
   return {
     checkGets: checkGets ?? true,
+    partial: partial ?? false,
     validate: validate ?? (() => true),
     modify: modify ?? (value => value),
     parse: parse ?? JSON.parse,
@@ -151,7 +161,7 @@ export function storeObject<
   defaults: Readonly<O>,
   configuration: StoreObjectConfig<O> = {},
 ): O {
-  const { checkGets, validate, modify, parse, stringify } =
+  const { checkGets, partial, validate, modify, parse, stringify } =
     defaultStoreObjectConfig(configuration)
 
   const checkParse = (value: string): O => {
@@ -165,15 +175,42 @@ export function storeObject<
 
   let object = { ...defaults } as O
 
-  // Update localStorage value
+  // Update localStorage value or read existing values
   if (!localStorage[lsKey]) {
     localStorage[lsKey] = checkStringify(defaults)
-  } else object = checkParse(localStorage[lsKey])
+  } else if (partial) {
+    let desiredObject = {} as Partial<O>
+    const checkParsed = checkParse(localStorage[lsKey])
+
+    // Only read existing values for desired keys
+    ;(Object.keys(defaults) as Keys<O>[]).forEach(
+      // Set to value found in localStorage if it exists, otherwise use provided default
+      key => (desiredObject[key] = checkParsed[key] ?? defaults[key]),
+    )
+
+    object = desiredObject as O
+    const validModified = validOrThrow(validate, modify, object, 'set', lsKey)
+    localStorage[lsKey] = stringify({ ...checkParsed, ...validModified })
+  } else {
+    object = checkParse(localStorage[lsKey])
+  }
 
   return new Proxy(object, {
     set(target, key: Keys<O>, value: string, receiver) {
       const setResult = Reflect.set(target, key, value, receiver)
-      localStorage[lsKey] = checkStringify(target)
+      if (partial) {
+        const validModified = validOrThrow(
+          validate,
+          modify,
+          target,
+          'set',
+          lsKey,
+        )
+        localStorage[lsKey] = stringify({
+          ...parse(localStorage[lsKey]),
+          ...validModified,
+        })
+      } else localStorage[lsKey] = checkStringify(target)
 
       return setResult
     },
