@@ -9,7 +9,10 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
     /**
      * Whether the stored object only contains/stores *some* of the keys on the serialized object.
      * This is useful if you want an object to look at only some keys of a localStorage object
-     * without overwriting the other ones
+     * without overwriting the other ones.
+     *
+     * It's important to note that passing this option effectively enables a key validation of sorts;
+     * any keys that were not passed are ignored and not passed to validate or modify (if these methods are defined)
      * @default false
      */
     partial?: boolean;
@@ -94,7 +97,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  *
  * @example
  * ```typescript
- * // Validation to automatically change a key based on another
+ * // Automatically change a key based on another
  * import { storeObject } from 'ls-proxy'
  *
  * interface Person {
