@@ -157,9 +157,14 @@ This project uses Jest for tests.
 
 ## License
 
-This project is licensed under the MIT license
-([LICENSE](https://gitlab.com/MysteryBlokHed/ls-proxy/-/blob/main/LICENSE)
-or <http://opensource.org/licenses/MIT>).
+This project is licensed under either of
+
+- Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
+  <http://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or
+  <http://opensource.org/licenses/MIT>)
+
+at your option.
 
 This project was created from [a template](https://gitlab.com/MysteryBlokHed/ls-proxy)
 licensed under the MIT license
@@ -168,4 +173,4 @@ or <http://opensource.org/licenses/MIT>).
 
 [build badge]: https://img.shields.io/gitlab/pipeline-status/MysteryBlokHed/ls-proxy
 [npm badge]: https://img.shields.io/npm/v/ls-proxy
-[license badge]: https://img.shields.io/badge/license-MIT-green
+[license badge]: https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-green

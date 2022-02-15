@@ -6,7 +6,7 @@
   "repository": "https://gitlab.com/MysteryBlokHed/ls-proxy",
   "homepage": "https://gitlab.com/MysteryBlokHed/ls-proxy",
   "author": "Adam Thompson-Sharpe",
-  "license": "MIT",
+  "license": "MIT OR Apache-2.0",
   "files": [
     "lib/**/*",
     "LICENSE",
