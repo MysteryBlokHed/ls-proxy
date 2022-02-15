@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.2.0
+
 ### Added
 
 - Option to store multiple objects under the same localStorage key (see `partial` parameter for `StoreObjectConfig`
