@@ -26,7 +26,6 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    *
    * @returns A boolean to confirm validity, false and an Error instance to deny validity,
    * or return true alongside an object to pass on instead of the original
-   * @default () => true
    */
   validate?(
     value: Readonly<any>,
@@ -35,8 +34,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    * Modify an object before setting it in localStorage or reading it.
    * Called after validate. Any valiation should be done in validate and not here
    *
-   * @returns A boolean to confirm validity, false and an Error instance to deny validity,
-   * or return true alongside an object to pass on instead of the original
+   * @returns A potentially modified version of the object originally passed
    */
   modify?(value: O): O
   /**
