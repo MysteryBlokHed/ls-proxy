@@ -3,6 +3,33 @@ import { storeObject } from '../lib'
 afterEach(() => localStorage.clear())
 
 describe('modification for storeObject', () => {
+  it('gets called when setting and getting', () => {
+    interface Stored {
+      foo: string
+      count: number
+    }
+
+    const modify = jest.fn<Stored, [Stored]>(value => value)
+
+    // Should be called at creation
+    const myObj = storeObject<Stored>(
+      'myObj',
+      { foo: 'bar', count: 0 },
+      { modify },
+    )
+    expect(modify).toHaveBeenCalled()
+
+    // Should be called when setting
+    myObj.foo = 'baz'
+    expect(modify).toHaveBeenCalled()
+
+    console.log('ls rn:', JSON.parse(localStorage.myObj))
+
+    // Should be called while getting
+    myObj.foo
+    expect(modify).toHaveBeenCalled()
+  })
+
   it('modifies both sets and gets', () => {
     const myObj = storeObject(
       'myObj',
