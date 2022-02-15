@@ -9,12 +9,12 @@ stages:
 
 cache:
   paths:
-    - build/
     - node_modules/
     - .yarn-cache/
 
 .changes: &changes
   - src/**/*
+  - test/**/*
   - package.json
   - tsconfig.json
   - webpack.config.js
@@ -42,7 +42,10 @@ build:
 
 test:
   stage: test
-  rules: [changes: *changes]
+  rules:
+    - changes: *changes
+      exists:
+        - lib/**/*
   script:
     - yarn test
 
@@ -53,6 +56,5 @@ pages:
   artifacts:
     paths: ['public/']
   rules:
-    # YAML anchor is used for changes here instead of the extends keyword extends doesn't merge arrays
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       changes: *changes

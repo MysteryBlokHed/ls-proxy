@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - src/**/*
+      - test/**/*
       - package.json
       - tsconfig.json
       - webpack.config.js
@@ -13,6 +14,7 @@ on:
     branches: [main]
     paths:
       - src/**/*
+      - test/**/*
       - package.json
       - tsconfig.json
       - webpack.config.js
@@ -20,8 +22,8 @@ on:
       - .prettier*
 
 jobs:
-  lint_and_build:
-    name: Lint And Build
+  lint_build_test:
+    name: Lint, Build, and Test
     runs-on: ubuntu-latest
 
     steps:
@@ -35,16 +37,18 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            build/
             node_modules/
             .yarn-cache/
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
 
       - name: Install dependencies
-        run: yarn install --cache-folder .yarn-cache
+        run: yarn --frozen-lockfile --check-files --cache-folder .yarn-cache install
 
       - name: Lint
         run: yarn lint --check
 
       - name: Build
         run: yarn build
+
+      - name: Test
+        run: yarn test

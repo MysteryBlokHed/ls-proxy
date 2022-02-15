@@ -127,7 +127,7 @@ To install dependencies, run:
 yarn install
 ```
 
-### Building files
+### Build
 
 To build the project, run:
 
@@ -144,6 +144,16 @@ yarn dev
 Built JS files and type declarations will be placed in the `lib/` directory,
 and the UserScript will be placed in the root. The `package.json` file is configured
 to publish files in the `lib/` directory to npm.
+
+### Test
+
+To test the project, run:
+
+```sh
+yarn test
+```
+
+This project uses Jest for tests.
 
 ## License
 
