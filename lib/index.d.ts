@@ -20,8 +20,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
      * Validate an object before setting it in localStorage or reading it.
      * Can confirm/deny if the object is valid, along with an optional error message if it is not
      *
-     * @returns A boolean to confirm validity, false and an Error instance to deny validity,
-     * or return true alongside an object to pass on instead of the original
+     * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
      */
     validate?(value: Readonly<any>): boolean | readonly [boolean] | readonly [false, Error];
     /**
