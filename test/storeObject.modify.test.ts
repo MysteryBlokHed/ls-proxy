@@ -1,15 +1,23 @@
-import { storeObject } from '../lib'
+import { storeObject, StoreObjectConfig } from '../lib'
 
 afterEach(() => localStorage.clear())
 
 describe('modification for storeObject', () => {
-  it('gets called when setting and getting', () => {
+  it('gets called with proper action when setting and getting', () => {
     interface Stored {
       foo: string
       count: number
     }
 
-    const modify = jest.fn<Stored, [Stored]>(value => value)
+    let lastAction: 'get' | 'set' = 'get'
+
+    const modify = jest.fn<
+      Stored,
+      Parameters<Required<StoreObjectConfig<Stored>>['modify']>
+    >((value, action) => {
+      lastAction = action
+      return value
+    })
 
     // Should be called at creation
     const myObj = storeObject<Stored>(
@@ -18,16 +26,17 @@ describe('modification for storeObject', () => {
       { modify },
     )
     expect(modify).toHaveBeenCalled()
+    expect(lastAction).toBe('set')
 
     // Should be called when setting
     myObj.foo = 'baz'
     expect(modify).toHaveBeenCalled()
-
-    console.log('ls rn:', JSON.parse(localStorage.myObj))
+    expect(lastAction).toBe('set')
 
     // Should be called while getting
     myObj.foo
     expect(modify).toHaveBeenCalled()
+    expect(lastAction).toBe('get')
   })
 
   it('modifies both sets and gets', () => {

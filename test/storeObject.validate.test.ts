@@ -1,22 +1,33 @@
-import { storeObject, Validations } from '../lib'
+import { storeObject, StoreObjectConfig, Validations } from '../lib'
 
 afterEach(() => localStorage.clear())
 
 describe('validation for storeObject', () => {
-  it('gets called when getting and setting', () => {
-    const validate = jest.fn(() => true)
+  it('gets called with proper action when getting and setting', () => {
+    let lastAction: 'get' | 'set' = 'get'
+
+    const validate = jest.fn<
+      boolean,
+      Parameters<Required<StoreObjectConfig<{}>>['validate']>
+    >((_, action) => {
+      lastAction = action
+      return true
+    })
 
     // Should be called at creation
     const myObj = storeObject('myObj', { foo: 'bar', count: 0 }, { validate })
     expect(validate).toHaveBeenCalled()
+    expect(lastAction).toBe('set')
 
     // Should be called when setting
     myObj.foo = 'baz'
     expect(validate).toHaveBeenCalled()
+    expect(lastAction).toBe('set')
 
     // Should be called while getting
     myObj.foo
     expect(validate).toHaveBeenCalled()
+    expect(lastAction).toBe('get')
   })
 
   it('throws errors when invalid', () => {
