@@ -28,6 +28,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    */
   validate?(
     value: Readonly<any>,
+    action: 'get' | 'set',
   ): boolean | readonly [boolean] | readonly [false, Error]
   /**
    * Modify an object before setting it in localStorage or reading it.
@@ -35,7 +36,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    *
    * @returns A potentially modified version of the object originally passed
    */
-  modify?(value: O): O
+  modify?(value: O, action: 'get' | 'set'): O
   /**
    * Function to parse object. Defaults to `JSON.parse`.
    * Any validation should **NOT** be done here, but in the validate method
@@ -259,7 +260,7 @@ const validOrThrow = <O extends Record<string, any>>(
       : `Validation failed while setting to ${lsKey} in localStorage`,
   )
 
-  const valid = validate(object)
+  const valid = validate(object, action)
 
   // Throw error on failure
   if (typeof valid === 'boolean') {
@@ -273,7 +274,7 @@ const validOrThrow = <O extends Record<string, any>>(
     }
   }
 
-  return modify(object)
+  return modify(object, action)
 }
 
 /** Configuration for storeSeparate */

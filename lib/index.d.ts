@@ -22,14 +22,14 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
      *
      * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
      */
-    validate?(value: Readonly<any>): boolean | readonly [boolean] | readonly [false, Error];
+    validate?(value: Readonly<any>, action: 'get' | 'set'): boolean | readonly [boolean] | readonly [false, Error];
     /**
      * Modify an object before setting it in localStorage or reading it.
      * Called after validate. Any valiation should be done in validate and not here
      *
      * @returns A potentially modified version of the object originally passed
      */
-    modify?(value: O): O;
+    modify?(value: O, action: 'get' | 'set'): O;
     /**
      * Function to parse object. Defaults to `JSON.parse`.
      * Any validation should **NOT** be done here, but in the validate method

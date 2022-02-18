@@ -289,7 +289,7 @@ const validOrThrow = (validate, modify, object, action, lsKey) => {
     const error = new TypeError(action === 'get'
         ? `Validation failed while parsing ${lsKey} from localStorage`
         : `Validation failed while setting to ${lsKey} in localStorage`);
-    const valid = validate(object);
+    const valid = validate(object, action);
     // Throw error on failure
     if (typeof valid === 'boolean') {
         // Return is bool
@@ -305,7 +305,7 @@ const validOrThrow = (validate, modify, object, action, lsKey) => {
                 throw error;
         }
     }
-    return modify(object);
+    return modify(object, action);
 };
 const defaultStoreSeparateConfig = ({ id, checkGets, }) => {
     return {
