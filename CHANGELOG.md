@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for deeply nested objects
 - Added action parameter to storeObject's modify and validate functions to indicate whether an object
   is being set to or retrieved from localStorage
 

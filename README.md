@@ -5,7 +5,8 @@ Wrapper around localStorage to easily store JSON objects.
 Supports:
 
 - Storing any type that can be serialized
-- Runtime type checking
+- Runtime valdiation (eg. type checking)
+- Deeply nested objects
 
 ## Why to use?
 
