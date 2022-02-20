@@ -28,6 +28,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    */
   validate?(
     value: Readonly<any>,
+    action: 'get' | 'set',
   ): boolean | readonly [boolean] | readonly [false, Error]
   /**
    * Modify an object before setting it in localStorage or reading it.
@@ -35,7 +36,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    *
    * @returns A potentially modified version of the object originally passed
    */
-  modify?(value: O): O
+  modify?(value: O, action: 'get' | 'set'): O
   /**
    * Function to parse object. Defaults to `JSON.parse`.
    * Any validation should **NOT** be done here, but in the validate method
@@ -204,9 +205,53 @@ export function storeObject<
     object = checkParse(localStorage[lsKey])
   }
 
-  return new Proxy(object, {
-    set(target, key: Keys<O>, value: string, receiver) {
-      const setResult = Reflect.set(target, key, value, receiver)
+  /** Proxy handler for deeply nested objects on the main object */
+  const nestedProxyHandler = <
+    P extends Record<string, any>,
+    N extends Record<string, any>,
+  >(
+    parent: P,
+    parentKey: Keys<P>,
+    nested: N,
+    parentSet: Required<ProxyHandler<P>>['set'],
+  ): ProxyHandler<N> => {
+    return new Proxy(nested, {
+      set(target, key: Keys<N>, value) {
+        const setResult = Reflect.set(target, key, value)
+
+        // Trigger set trap of original object, updating localStorage
+        parentSet(parent, parentKey, target, parent)
+
+        return setResult
+      },
+
+      get(target, key: Keys<N>) {
+        if (
+          // Check that the target isn't falsey (primarily in case it's null, since typeof null === 'object')
+          target[key] &&
+          // Check type
+          typeof target[key] === 'object' &&
+          // 'object' type includes arrays and other things, so check the constructor
+          target[key].constructor === Object
+        ) {
+          // Return a Proxy to the object to catch sets
+          return nestedProxyHandler(
+            target,
+            key,
+            Reflect.get(target, key),
+            this.set! as any,
+          )
+        }
+        return Reflect.get(target, key)
+      },
+    })
+  }
+
+  /** Proxy handler for the main object */
+  const proxyHandler: ProxyHandler<O> = {
+    set(target, key: Keys<O>, value) {
+      const setResult = Reflect.set(target, key, value)
+
       if (partial) {
         const validModified = vot(target)
         localStorage[lsKey] = stringify({
@@ -218,7 +263,7 @@ export function storeObject<
       return setResult
     },
 
-    get(target, key: Keys<O>, receiver) {
+    get(target, key: Keys<O>) {
       if (checkGets) {
         if (partial) {
           target[key] = vot(
@@ -229,11 +274,25 @@ export function storeObject<
         } else {
           target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
         }
+
+        if (
+          // Check that the target isn't falsey (primarily in case it's null, since typeof null === 'object')
+          target[key] &&
+          // Check type
+          typeof target[key] === 'object' &&
+          // 'object' type includes arrays and other things, so check the constructor
+          target[key].constructor === Object
+        ) {
+          // Return a Proxy to the object to catch sets
+          return nestedProxyHandler(target, key, target[key], this.set!)
+        }
       }
 
-      return Reflect.get(target, key, receiver)
+      return Reflect.get(target, key)
     },
-  })
+  }
+
+  return new Proxy(object, proxyHandler)
 }
 
 /**
@@ -259,7 +318,7 @@ const validOrThrow = <O extends Record<string, any>>(
       : `Validation failed while setting to ${lsKey} in localStorage`,
   )
 
-  const valid = validate(object)
+  const valid = validate(object, action)
 
   // Throw error on failure
   if (typeof valid === 'boolean') {
@@ -273,7 +332,7 @@ const validOrThrow = <O extends Record<string, any>>(
     }
   }
 
-  return modify(object)
+  return modify(object, action)
 }
 
 /** Configuration for storeSeparate */
@@ -334,14 +393,14 @@ export function storeSeparate<
   }
 
   return new Proxy(object, {
-    set(target, key: Keys<O>, value: string, receiver) {
+    set(target, key: Keys<O>, value: string) {
       localStorage[addId(key, id)] = value
-      return Reflect.set(target, key, value, receiver)
+      return Reflect.set(target, key, value)
     },
 
-    get(target, key: Keys<O>, receiver) {
+    get(target, key: Keys<O>) {
       if (checkGets) target[key] = localStorage[addId(key, id)] ?? defaults[key]
-      return Reflect.get(target, key, receiver)
+      return Reflect.get(target, key)
     },
   })
 }
