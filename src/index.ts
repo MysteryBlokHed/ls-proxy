@@ -217,49 +217,15 @@ export function storeObject<
   ): ProxyHandler<N> => {
     return new Proxy(nested, {
       set(target, key: Keys<N>, value) {
-        console.log('NESTED OBJECT SET TRAPPED')
-        console.log('setting', key, 'to', value)
-
-        console.log('nested b4 set:', target)
-        console.log('nested stringified b4 set:', JSON.stringify(target))
-
         const setResult = Reflect.set(target, key, value)
-
-        console.log('nested after set:', target)
-        console.log('nested stringified after set:', JSON.stringify(target))
-
-        console.log(
-          parentKey,
-          'on og object',
-          parent,
-          'before set:',
-          parent[parentKey],
-        )
-
-        console.log(
-          parentKey,
-          'on og object',
-          parent,
-          'before set (stringified):',
-          JSON.stringify(parent[parentKey]),
-        )
 
         // Trigger set trap of original object, updating localStorage
         parentSet(parent, parentKey, target, parent)
-
-        console.log(
-          parentKey,
-          'on og object',
-          parent,
-          'after set:',
-          parent[parentKey],
-        )
 
         return setResult
       },
 
       get(target, key: Keys<N>) {
-        console.log('Getting some kind of key', key, 'on', target)
         if (
           // Check that the target isn't falsey (primarily in case it's null, since typeof null === 'object')
           target[key] &&
@@ -268,7 +234,6 @@ export function storeObject<
           // 'object' type includes arrays and other things, so check the constructor
           target[key].constructor === Object
         ) {
-          console.log('TRAPPING NESTED OBJECT ON', target)
           // Return a Proxy to the object to catch sets
           return nestedProxyHandler(
             target,
@@ -285,44 +250,7 @@ export function storeObject<
   /** Proxy handler for the main object */
   const proxyHandler: ProxyHandler<O> = {
     set(target, key: Keys<O>, value) {
-      console.log(
-        'og object set trap triggered with key',
-        key,
-        'and value',
-        value,
-      )
-      console.log('target[key] from og trap:', target[key])
-      console.log(
-        'target[key] from og trap stringified:',
-        JSON.stringify(target[key]),
-      )
-      console.log(
-        'og object set trap triggered with key',
-        key,
-        'and value',
-        value,
-      )
-
-      console.log('idfk at this point')
-      console.log(
-        'setting key',
-        key,
-        'to value',
-        value,
-        'on target',
-        target,
-        'with ',
-      )
-      console.log('is target[key] identical to value?', target[key] === value)
-
       const setResult = Reflect.set(target, key, value)
-
-      console.log('value passed to trap after set:', value)
-      console.log('AFTER SET target[key] from og trap:', target[key])
-      console.log(
-        'AFTER SET target[key] from og trap stringified:',
-        JSON.stringify(target[key]),
-      )
 
       if (partial) {
         const validModified = vot(target)
@@ -355,7 +283,6 @@ export function storeObject<
           // 'object' type includes arrays and other things, so check the constructor
           target[key].constructor === Object
         ) {
-          console.log('TRAPPING NESTED OBJECT')
           // Return a Proxy to the object to catch sets
           return nestedProxyHandler(target, key, target[key], this.set!)
         }
