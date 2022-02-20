@@ -69,6 +69,49 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
   }
 }
 
+const shouldObjectProxy = (object: any) =>
+  // Check that the target isn't falsey (primarily in case it's null, since typeof null === 'object')
+  object &&
+  // Check type
+  typeof object === 'object' &&
+  // 'object' type includes some unwanted types, so check constructor
+  [Object, Array].includes(object.constructor)
+
+/** Proxy handler for deeply nested objects on the main object */
+const nestedProxyHandler = <
+  P extends Record<string, any>,
+  N extends Record<string, any>,
+>(
+  parent: P,
+  parentKey: Keys<P>,
+  nested: N,
+  parentSet: Required<ProxyHandler<P>>['set'],
+): ProxyHandler<N> => {
+  return new Proxy(nested, {
+    set(target, key: Keys<N>, value) {
+      const setResult = Reflect.set(target, key, value)
+
+      // Trigger set trap of original object, updating localStorage
+      parentSet(parent, parentKey, target, parent)
+
+      return setResult
+    },
+
+    get(target, key: Keys<N>) {
+      if (shouldObjectProxy(target[key])) {
+        // Return a Proxy to the object to catch sets
+        return nestedProxyHandler(
+          target,
+          key,
+          Reflect.get(target, key),
+          this.set! as any,
+        )
+      }
+      return Reflect.get(target, key)
+    },
+  })
+}
+
 /**
  * Store a stringified JSON object in localStorage.
  * This method can use any type that can be serialized.
@@ -205,48 +248,6 @@ export function storeObject<
     object = checkParse(localStorage[lsKey])
   }
 
-  /** Proxy handler for deeply nested objects on the main object */
-  const nestedProxyHandler = <
-    P extends Record<string, any>,
-    N extends Record<string, any>,
-  >(
-    parent: P,
-    parentKey: Keys<P>,
-    nested: N,
-    parentSet: Required<ProxyHandler<P>>['set'],
-  ): ProxyHandler<N> => {
-    return new Proxy(nested, {
-      set(target, key: Keys<N>, value) {
-        const setResult = Reflect.set(target, key, value)
-
-        // Trigger set trap of original object, updating localStorage
-        parentSet(parent, parentKey, target, parent)
-
-        return setResult
-      },
-
-      get(target, key: Keys<N>) {
-        if (
-          // Check that the target isn't falsey (primarily in case it's null, since typeof null === 'object')
-          target[key] &&
-          // Check type
-          typeof target[key] === 'object' &&
-          // 'object' type includes arrays and other things, so check the constructor
-          target[key].constructor === Object
-        ) {
-          // Return a Proxy to the object to catch sets
-          return nestedProxyHandler(
-            target,
-            key,
-            Reflect.get(target, key),
-            this.set! as any,
-          )
-        }
-        return Reflect.get(target, key)
-      },
-    })
-  }
-
   /** Proxy handler for the main object */
   const proxyHandler: ProxyHandler<O> = {
     set(target, key: Keys<O>, value) {
@@ -275,14 +276,7 @@ export function storeObject<
           target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
         }
 
-        if (
-          // Check that the target isn't falsey (primarily in case it's null, since typeof null === 'object')
-          target[key] &&
-          // Check type
-          typeof target[key] === 'object' &&
-          // 'object' type includes arrays and other things, so check the constructor
-          target[key].constructor === Object
-        ) {
+        if (shouldObjectProxy(target[key])) {
           // Return a Proxy to the object to catch sets
           return nestedProxyHandler(target, key, target[key], this.set!)
         }
