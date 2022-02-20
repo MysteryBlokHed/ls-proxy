@@ -248,10 +248,55 @@ function storeObject(lsKey, defaults, configuration = {}) {
     else {
         object = checkParse(localStorage[lsKey]);
     }
+    /** Proxy handler for deeply nested objects on the main object */
+    const nestedProxyHandler = (parent, parentKey, nested, parentSet) => {
+        return new Proxy(nested, {
+            set(target, key, value) {
+                console.log('NESTED OBJECT SET TRAPPED');
+                console.log('setting', key, 'to', value);
+                console.log('nested b4 set:', target);
+                console.log('nested stringified b4 set:', JSON.stringify(target));
+                const setResult = Reflect.set(target, key, value);
+                console.log('nested after set:', target);
+                console.log('nested stringified after set:', JSON.stringify(target));
+                console.log(parentKey, 'on og object', parent, 'before set:', parent[parentKey]);
+                console.log(parentKey, 'on og object', parent, 'before set (stringified):', JSON.stringify(parent[parentKey]));
+                // Trigger set trap of original object, updating localStorage
+                parentSet(parent, parentKey, target, parent);
+                console.log(parentKey, 'on og object', parent, 'after set:', parent[parentKey]);
+                return setResult;
+            },
+            get(target, key) {
+                console.log('Getting some kind of key', key, 'on', target);
+                if (
+                // Check that the target isn't falsey (primarily in case it's null, since typeof null === 'object')
+                target[key] &&
+                    // Check type
+                    typeof target[key] === 'object' &&
+                    // 'object' type includes arrays and other things, so check the constructor
+                    target[key].constructor === Object) {
+                    console.log('TRAPPING NESTED OBJECT ON', target);
+                    // Return a Proxy to the object to catch sets
+                    return nestedProxyHandler(target, key, Reflect.get(target, key), this.set);
+                }
+                return Reflect.get(target, key);
+            },
+        });
+    };
+    /** Proxy handler for the main object */
     const proxyHandler = {
-        set(target, key, value, receiver) {
+        set(target, key, value) {
             console.log('og object set trap triggered with key', key, 'and value', value);
-            const setResult = Reflect.set(target, key, value, receiver);
+            console.log('target[key] from og trap:', target[key]);
+            console.log('target[key] from og trap stringified:', JSON.stringify(target[key]));
+            console.log('og object set trap triggered with key', key, 'and value', value);
+            console.log('idfk at this point');
+            console.log('setting key', key, 'to value', value, 'on target', target, 'with ');
+            console.log('is target[key] identical to value?', target[key] === value);
+            const setResult = Reflect.set(target, key, value);
+            console.log('value passed to trap after set:', value);
+            console.log('AFTER SET target[key] from og trap:', target[key]);
+            console.log('AFTER SET target[key] from og trap stringified:', JSON.stringify(target[key]));
             if (partial) {
                 const validModified = vot(target);
                 localStorage[lsKey] = stringify(Object.assign(Object.assign({}, parse(localStorage[lsKey])), validModified));
@@ -260,7 +305,7 @@ function storeObject(lsKey, defaults, configuration = {}) {
                 localStorage[lsKey] = checkStringify(target);
             return setResult;
         },
-        get(target, key, receiver) {
+        get(target, key) {
             var _a;
             if (checkGets) {
                 if (partial) {
@@ -279,24 +324,10 @@ function storeObject(lsKey, defaults, configuration = {}) {
                     target[key].constructor === Object) {
                     console.log('TRAPPING NESTED OBJECT');
                     // Return a Proxy to the object to catch sets
-                    return new Proxy(Reflect.get(target, key, receiver), {
-                        set(nestedTarget, nestedKey, nestedValue, nestedReceiver) {
-                            var _a;
-                            console.log('NESTED OBJECT SET TRAPPED');
-                            console.log('setting', nestedKey, 'to', nestedValue);
-                            console.log('nested b4 set:', nestedTarget);
-                            const setResult = Reflect.set(nestedTarget, nestedKey, nestedValue, nestedReceiver);
-                            console.log('nested after set:', nestedTarget);
-                            console.log(key, 'on og object', target, 'before set:', target[key]);
-                            // Trigger set trap of original object, updating localStorage
-                            (_a = proxyHandler.set) === null || _a === void 0 ? void 0 : _a.call(proxyHandler, target, key, nestedTarget, receiver);
-                            console.log(key, 'on og object', target, 'after set:', target[key]);
-                            return setResult;
-                        },
-                    });
+                    return nestedProxyHandler(target, key, target[key], this.set);
                 }
             }
-            return Reflect.get(target, key, receiver);
+            return Reflect.get(target, key);
         },
     };
     return new Proxy(object, proxyHandler);
@@ -371,15 +402,15 @@ function storeSeparate(defaults, configuration = {}) {
             object[key] = localStorage[keyPrefix];
     }
     return new Proxy(object, {
-        set(target, key, value, receiver) {
+        set(target, key, value) {
             localStorage[addId(key, id)] = value;
-            return Reflect.set(target, key, value, receiver);
+            return Reflect.set(target, key, value);
         },
-        get(target, key, receiver) {
+        get(target, key) {
             var _a;
             if (checkGets)
                 target[key] = (_a = localStorage[addId(key, id)]) !== null && _a !== void 0 ? _a : defaults[key];
-            return Reflect.get(target, key, receiver);
+            return Reflect.get(target, key);
         },
     });
 }
