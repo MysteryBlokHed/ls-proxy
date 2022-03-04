@@ -1,4 +1,3 @@
-import type { StoreObjectConfig } from '.'
 import type { Keys } from './types'
 
 /** Validations meant to be used with `storeObject`'s validate function */
@@ -22,7 +21,7 @@ namespace Validations {
    */
   export const keys = <O extends Record<string, any>>(
     value: Readonly<any>,
-    requiredKeys: readonly string[],
+    requiredKeys: readonly Keys<O>[],
   ) =>
     Object.keys(value).every(key => requiredKeys.includes(key)) &&
     requiredKeys.every(key => key in value)
