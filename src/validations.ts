@@ -5,6 +5,10 @@ namespace Validations {
   /**
    * Validate that only expected keys are present on an object
    *
+   * @param value The unknown value to validate types of
+   * @param requiredKeys The **only** keys that should be present
+   * @template O The stored object
+   *
    * @example
    * ```typescript
    * import { storeObject, Validations } from 'ls-proxy'
@@ -31,6 +35,7 @@ namespace Validations {
    *
    * @param value The unknown value to validate types of
    * @param typesMap A map of expected keys for an object to expected types, checked like `typeof value[key] === typesMap[key]`
+   * @template O The stored object
    * @example
    * ```typescript
    * import { storeObject, Validations } from 'ls-proxy'

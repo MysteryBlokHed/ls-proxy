@@ -2,7 +2,10 @@ import type { Keys } from './types'
 
 export { default as Validations } from './validations'
 
-/** Configuration for storeObject */
+/**
+ * Configuration for StoreObjectConfig
+ * @template O The stored object
+ */
 export interface StoreObjectConfig<O extends Record<string, any>> {
   /**
    * Whether or not to check localStorage when an object key is retrieved
@@ -51,6 +54,10 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
   stringify?: (value: any) => string
 }
 
+/**
+ * Fill in default values for StoreObjectConfig
+ * @template O The stored object
+ */
 const defaultStoreObjectConfig = <O extends Record<string, any>>({
   checkGets,
   partial,
@@ -77,7 +84,11 @@ const shouldObjectProxy = (object: any) =>
   // 'object' type includes some unwanted types, so check constructor
   [Object, Array].includes(object.constructor)
 
-/** Proxy handler for deeply nested objects on the main object */
+/**
+ * Proxy handler for deeply nested objects on the main object
+ * @template P The parent object
+ * @template N The child of the parent
+ */
 const nestedProxyHandler = <
   P extends Record<string, any>,
   N extends Record<string, any>,
@@ -121,6 +132,7 @@ const nestedProxyHandler = <
  * @param lsKey The localStorage key to store the stringified object in
  * @param defaults The default values if the object is not stored
  * @param configuration Config options
+ * @template O The stored object
  *
  * @example
  * ```typescript
@@ -297,6 +309,7 @@ export function storeObject<
  * @param object The object to modify
  * @param action Whether the object is being get or set
  * @param lsKey The key in localStorage
+ * @template O The stored object
  * @returns The object if valid
  */
 const validOrThrow = <O extends Record<string, any>>(
@@ -360,6 +373,7 @@ const defaultStoreSeparateConfig = ({
  *
  * @param defaults The defaults values if they are undefined
  * @param configuration Config options
+ * @template O The stored object
  *
  * @example
  * ```typescript

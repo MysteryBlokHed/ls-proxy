@@ -4,6 +4,10 @@ declare namespace Validations {
     /**
      * Validate that only expected keys are present on an object
      *
+     * @param value The unknown value to validate types of
+     * @param requiredKeys The **only** keys that should be present
+     * @template O The stored object
+     *
      * @example
      * ```typescript
      * import { storeObject, Validations } from 'ls-proxy'
@@ -18,12 +22,13 @@ declare namespace Validations {
      * myObj.bar = 'xyz' // error
      * ```
      */
-    const keys: <O extends Record<string, any>>(value: Readonly<any>, requiredKeys: readonly string[]) => boolean;
+    const keys: <O extends Record<string, any>>(value: Readonly<any>, requiredKeys: readonly Keys<O>[]) => boolean;
     /**
      * Validate that the types passed for an object are expected
      *
      * @param value The unknown value to validate types of
      * @param typesMap A map of expected keys for an object to expected types, checked like `typeof value[key] === typesMap[key]`
+     * @template O The stored object
      * @example
      * ```typescript
      * import { storeObject, Validations } from 'ls-proxy'
