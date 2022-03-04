@@ -1,5 +1,8 @@
 export { default as Validations } from './validations';
-/** Configuration for storeObject */
+/**
+ * Configuration for StoreObjectConfig
+ * @template O The stored object
+ */
 export interface StoreObjectConfig<O extends Record<string, any>> {
     /**
      * Whether or not to check localStorage when an object key is retrieved
@@ -52,6 +55,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  * @param lsKey The localStorage key to store the stringified object in
  * @param defaults The default values if the object is not stored
  * @param configuration Config options
+ * @template O The stored object
  *
  * @example
  * ```typescript
@@ -149,6 +153,7 @@ export interface StoreSeparateConfig {
  *
  * @param defaults The defaults values if they are undefined
  * @param configuration Config options
+ * @template O The stored object
  *
  * @example
  * ```typescript
