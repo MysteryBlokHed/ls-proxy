@@ -101,4 +101,53 @@ describe('storeObject function', () => {
     localStorage.myObj = JSON.stringify(modified)
     expect(myObj.nested1.nested2.arr[0]).toBe(2)
   })
+
+  it('calls custom get and set methods', () => {
+    let sets = 0
+    let gets = 0
+
+    const set = (key: string, value: string) => {
+      sets++
+      localStorage[key] = value
+    }
+
+    const get = (value: string) => {
+      gets++
+      return localStorage.getItem(value)
+    }
+
+    const myObj = storeObject('myObj', { foo: 'bar', abc: 1 }, { set, get })
+    expect(sets).toBe(1)
+    expect(gets).toBe(1)
+
+    myObj.foo
+    expect(gets).toBe(2)
+
+    myObj.foo = 'baz'
+    expect(sets).toBe(2)
+
+    myObj.abc++
+    expect(gets).toBe(3)
+    expect(sets).toBe(3)
+  })
+
+  it("doesn't check localStorage if checkGets is disabled", () => {
+    let gets = 0
+
+    const get = (value: string) => {
+      gets++
+      return localStorage.getItem(value)
+    }
+
+    const myObj = storeObject(
+      'myObj',
+      { foo: 'bar', abc: 1 },
+      { checkGets: false, get },
+    )
+    expect(gets).toBe(1)
+    myObj.foo
+    expect(gets).toBe(1)
+    myObj.abc++
+    expect(gets).toBe(1)
+  })
 })
