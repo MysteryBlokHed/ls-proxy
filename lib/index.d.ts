@@ -14,11 +14,23 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
      * This is useful if you want an object to look at only some keys of a localStorage object
      * without overwriting the other ones.
      *
-     * It's important to note that passing this option effectively enables a key validation of sorts;
-     * any keys that were not passed are ignored and not passed to validate or modify (if these methods are defined)
+     * It's important to note that passing this option effectively enables key validation:
+     * any keys that were not passed are ignored and not passed to validate or modify
      * @default false
      */
     partial?: boolean;
+    /**
+     * Called whenever a key should be set
+     * @param value The value being set
+     * @default localStorage.setItem
+     */
+    set?(key: string, value: string): void;
+    /**
+     * Called whenever a key should be retrieved
+     * @param value The value being set
+     * @returns The key's value
+     */
+    get?(key: string): string | null;
     /**
      * Validate an object before setting it in localStorage or reading it.
      * Can confirm/deny if the object is valid, along with an optional error message if it is not

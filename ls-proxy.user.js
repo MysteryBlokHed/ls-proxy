@@ -123,10 +123,12 @@ Object.defineProperty(exports, "Validations", ({ enumerable: true, get: function
  * Fill in default values for StoreObjectConfig
  * @template O The stored object
  */
-const defaultStoreObjectConfig = ({ checkGets, partial, validate, modify, parse, stringify, }) => {
+const defaultStoreObjectConfig = ({ checkGets, partial, set, get, validate, modify, parse, stringify, }) => {
     return {
         checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
         partial: partial !== null && partial !== void 0 ? partial : false,
+        set: set !== null && set !== void 0 ? set : ((key, value) => (localStorage[key] = value)),
+        get: get !== null && get !== void 0 ? get : (value => { var _a; return (_a = localStorage[value]) !== null && _a !== void 0 ? _a : null; }),
         validate: validate !== null && validate !== void 0 ? validate : (() => true),
         modify: modify !== null && modify !== void 0 ? modify : (value => value),
         parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
@@ -250,7 +252,7 @@ const nestedProxyHandler = (parent, parentKey, nested, parentSet) => {
  * ```
  */
 function storeObject(lsKey, defaults, configuration = {}) {
-    const { checkGets, partial, validate, modify, parse, stringify } = defaultStoreObjectConfig(configuration);
+    const { checkGets, partial, set, get, validate, modify, parse, stringify } = defaultStoreObjectConfig(configuration);
     /** Call validOrThrow with relevant parameters by default */
     const vot = (value, action = 'set') => validOrThrow(validate, modify, value, action, lsKey);
     const checkParse = (value) => {
@@ -275,17 +277,18 @@ function storeObject(lsKey, defaults, configuration = {}) {
     };
     let object = Object.assign({}, defaults);
     // Update localStorage value or read existing values
-    if (!localStorage[lsKey]) {
-        localStorage[lsKey] = checkStringify(defaults);
+    const value = get(lsKey);
+    if (!value) {
+        set(lsKey, checkStringify(defaults));
     }
     else if (partial) {
-        const current = parse(localStorage[lsKey]);
+        const current = parse(value);
         object = filterWanted(current);
         const validModified = vot(object);
-        localStorage[lsKey] = stringify(Object.assign(Object.assign({}, current), validModified));
+        set(lsKey, stringify(Object.assign(Object.assign({}, current), validModified)));
     }
     else {
-        object = checkParse(localStorage[lsKey]);
+        object = checkParse(value);
     }
     /** Proxy handler for the main object */
     const proxyHandler = {
@@ -293,21 +296,21 @@ function storeObject(lsKey, defaults, configuration = {}) {
             const setResult = Reflect.set(target, key, value);
             if (partial) {
                 const validModified = vot(target);
-                localStorage[lsKey] = stringify(Object.assign(Object.assign({}, parse(localStorage[lsKey])), validModified));
+                set(lsKey, stringify(Object.assign(Object.assign({}, parse(get(lsKey))), validModified)));
             }
             else
-                localStorage[lsKey] = checkStringify(target);
+                set(lsKey, checkStringify(target));
             return setResult;
         },
         get(target, key) {
             var _a;
             if (checkGets) {
                 if (partial) {
-                    target[key] = vot(filterWanted(parse(localStorage[lsKey]), false), 'get')[key];
+                    target[key] = vot(filterWanted(parse(get(lsKey)), false), 'get')[key];
                     vot(target, 'get');
                 }
                 else {
-                    target[key] = (_a = checkParse(localStorage[lsKey])[key]) !== null && _a !== void 0 ? _a : defaults[key];
+                    target[key] = (_a = checkParse(get(lsKey))[key]) !== null && _a !== void 0 ? _a : defaults[key];
                 }
                 if (shouldObjectProxy(target[key])) {
                     // Return a Proxy to the object to catch sets

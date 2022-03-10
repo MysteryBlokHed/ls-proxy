@@ -17,12 +17,24 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    * This is useful if you want an object to look at only some keys of a localStorage object
    * without overwriting the other ones.
    *
-   * It's important to note that passing this option effectively enables a key validation of sorts;
-   * any keys that were not passed are ignored and not passed to validate or modify (if these methods are defined)
+   * It's important to note that passing this option effectively enables key validation:
+   * any keys that were not passed are ignored and not passed to validate or modify
    * @default false
    */
   partial?: boolean
 
+  /**
+   * Called whenever a key should be set
+   * @param value The value being set
+   * @default localStorage.setItem
+   */
+  set?(key: string, value: string): void
+  /**
+   * Called whenever a key should be retrieved
+   * @param value The value being set
+   * @returns The key's value
+   */
+  get?(key: string): string | null
   /**
    * Validate an object before setting it in localStorage or reading it.
    * Can confirm/deny if the object is valid, along with an optional error message if it is not
@@ -61,6 +73,8 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
 const defaultStoreObjectConfig = <O extends Record<string, any>>({
   checkGets,
   partial,
+  set,
+  get,
   validate,
   modify,
   parse,
@@ -69,6 +83,8 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
   return {
     checkGets: checkGets ?? true,
     partial: partial ?? false,
+    set: set ?? ((key, value) => (localStorage[key] = value)),
+    get: get ?? (value => localStorage[value] ?? null),
     validate: validate ?? (() => true),
     modify: modify ?? (value => value),
     parse: parse ?? JSON.parse,
@@ -213,7 +229,7 @@ const nestedProxyHandler = <
 export function storeObject<
   O extends Record<string, any> = Record<string, any>,
 >(lsKey: string, defaults: O, configuration: StoreObjectConfig<O> = {}): O {
-  const { checkGets, partial, validate, modify, parse, stringify } =
+  const { checkGets, partial, set, get, validate, modify, parse, stringify } =
     defaultStoreObjectConfig(configuration)
 
   /** Call validOrThrow with relevant parameters by default */
@@ -248,16 +264,17 @@ export function storeObject<
   let object = { ...defaults } as O
 
   // Update localStorage value or read existing values
-  if (!localStorage[lsKey]) {
-    localStorage[lsKey] = checkStringify(defaults)
+  const value = get(lsKey)
+  if (!value) {
+    set(lsKey, checkStringify(defaults))
   } else if (partial) {
-    const current = parse(localStorage[lsKey])
+    const current = parse(value)
     object = filterWanted(current)
 
     const validModified = vot(object)
-    localStorage[lsKey] = stringify({ ...current, ...validModified })
+    set(lsKey, stringify({ ...current, ...validModified }))
   } else {
-    object = checkParse(localStorage[lsKey])
+    object = checkParse(value)
   }
 
   /** Proxy handler for the main object */
@@ -267,11 +284,14 @@ export function storeObject<
 
       if (partial) {
         const validModified = vot(target)
-        localStorage[lsKey] = stringify({
-          ...parse(localStorage[lsKey]),
-          ...validModified,
-        })
-      } else localStorage[lsKey] = checkStringify(target)
+        set(
+          lsKey,
+          stringify({
+            ...parse(get(lsKey)!),
+            ...validModified,
+          }),
+        )
+      } else set(lsKey, checkStringify(target))
 
       return setResult
     },
@@ -279,13 +299,10 @@ export function storeObject<
     get(target, key: Keys<O>) {
       if (checkGets) {
         if (partial) {
-          target[key] = vot(
-            filterWanted(parse(localStorage[lsKey]), false),
-            'get',
-          )[key]
+          target[key] = vot(filterWanted(parse(get(lsKey)!), false), 'get')[key]
           vot(target, 'get')
         } else {
-          target[key] = checkParse(localStorage[lsKey])[key] ?? defaults[key]
+          target[key] = checkParse(get(lsKey)!)[key] ?? defaults[key]
         }
 
         if (shouldObjectProxy(target[key])) {
