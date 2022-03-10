@@ -28,13 +28,15 @@ const banner = genBanner({
  */
 const vanillaLibraryName = 'LSProxy'
 
-/** The name of the generated Userscript file */
-const outFile = `${package.name}.user.js`
+/** The name of the generated Userscript file, excluding the .user.js suffix */
+const outFile = package.name
 
-module.exports = {
+module.exports = (_, argv) => ({
   entry: path.resolve(__dirname, 'lib/index.js'),
   output: {
-    filename: outFile,
+    filename: `${outFile}${
+      argv?.mode === 'production' ? '.min.user.js' : '.user.js'
+    }`,
     path: __dirname,
     library: vanillaLibraryName,
     libraryTarget: 'window',
@@ -66,4 +68,4 @@ module.exports = {
   },
   mode: 'development',
   devtool: false,
-}
+})

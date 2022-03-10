@@ -93,6 +93,13 @@ You can replace `main` with a specific release tag like `v0.1.0` to require a sp
 // @require     https://gitlab.com/MysteryBlokHed/ls-proxy/-/raw/v0.1.0/ls-proxy.user.js
 ```
 
+Each release tag also has a minified version of the script available,
+which can be used by changing the file extension to `.min.user.js`:
+
+```javascript
+// @require     https://gitlab.com/MysteryBlokHed/ls-proxy/-/raw/v0.1.0/ls-proxy.min.user.js
+```
+
 Functions are available on the global `LSProxy` object:
 
 ```javascript
