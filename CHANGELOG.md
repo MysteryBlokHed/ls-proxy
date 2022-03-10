@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added option to define get/set functions for storeObject
 - Added JSDoc for functions' generic types
 
 ## 0.3.1
