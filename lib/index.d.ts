@@ -1,3 +1,4 @@
+import type { Keys } from './types';
 export { default as Validations } from './validations';
 /**
  * Configuration options used between both storeObject and storeSeparate
@@ -154,17 +155,26 @@ export declare function storeObject<O extends Record<string, any> = Record<strin
 /**
  * Configuration for storeSeparate
  */
-export interface StoreSeparateConfig extends CommonConfig {
+export interface StoreSeparateConfig<O extends Record<string, any>> extends CommonConfig {
     /**
      * An optional unique identifier. Prefixes all keys in localStorage
      * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
      */
     id?: string;
     /**
-     * Whether or not to check localStorage when an object key is retrieved
-     * @default true
+     * Validate an object before setting it in localStorage or reading it.
+     * Can confirm/deny if the object is valid, along with an optional error message if it is not
+     *
+     * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
      */
-    checkGets?: boolean;
+    validate?(value: Readonly<any>, action: 'get' | 'set', key: Keys<O>): boolean | readonly [boolean] | readonly [false, Error];
+    /**
+     * Modify an object before setting it in localStorage or reading it.
+     * Called after validate. Any valiation should be done in validate and not here
+     *
+     * @returns A potentially modified version of the object originally passed
+     */
+    modify?(value: O, action: 'get' | 'set', key: Keys<O>): O;
 }
 /**
  * Set multiple individual keys in localStorage with one object
@@ -185,6 +195,6 @@ export interface StoreSeparateConfig extends CommonConfig {
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-export declare function storeSeparate<O extends Record<string, any> = Record<string, any>>(defaults: O, configuration?: StoreSeparateConfig): O;
+export declare function storeSeparate<O extends Record<string, any> = Record<string, any>>(defaults: O, configuration?: StoreSeparateConfig<O>): O;
 
 export as namespace LSProxy;

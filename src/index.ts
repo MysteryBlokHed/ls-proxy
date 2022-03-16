@@ -341,10 +341,27 @@ export function storeObject<
   return new Proxy(object, proxyHandler)
 }
 
+const throwIfError = (
+  valid: ReturnType<Required<StoreObjectConfig<never>>['validate']>,
+  defaultError: Error,
+) => {
+  // Throw error on failure
+  if (typeof valid === 'boolean') {
+    // Return is bool
+    if (!valid) throw defaultError
+  } else if (Array.isArray(valid)) {
+    // Return is array
+    if (!valid[0]) {
+      if (valid.length === 2) throw valid[1]
+      else throw defaultError
+    }
+  }
+}
+
 /**
  * Validate and modify an object
  *
- * @param validate Return from the validate function
+ * @param validate Function to validate the object
  * @param modify Function to modify the object
  * @param object The object to modify
  * @param action Whether the object is being get or set
@@ -368,47 +385,89 @@ const validOrThrow = <O extends Record<string, any>>(
   const valid = validate(object, action)
 
   // Throw error on failure
-  if (typeof valid === 'boolean') {
-    // Return is bool
-    if (!valid) throw error
-  } else if (Array.isArray(valid)) {
-    // Return is array
-    if (!valid[0]) {
-      if (valid.length === 2) throw valid[1]
-      else throw error
-    }
-  }
+  throwIfError(valid, error)
 
   return modify(object, action)
 }
 
 /**
+ * Validate and modify an object with storeSeparate
+ *
+ * @param validate Function to validate the object
+ * @param modify Function to modify the object
+ * @param object The object to modify
+ * @param action Whether the object is being get or set
+ * @param key The key being modified
+ * @template O The stored object
+ * @returns The object if valid
+ */
+const validOrThrowSeparate = <O extends Record<string, any>>(
+  validate: Required<StoreSeparateConfig<O>>['validate'],
+  modify: Required<StoreSeparateConfig<O>>['modify'],
+  object: Readonly<O>,
+  action: 'get' | 'set',
+  key: string,
+): O => {
+  const error = new TypeError(
+    action === 'get'
+      ? `Validation failed while parsing ${key} from localStorage`
+      : `Validation failed while setting to ${key} in localStorage`,
+  )
+
+  const valid = validate(object, action, key)
+
+  // Throw error on failure
+  throwIfError(valid, error)
+
+  return modify(object, action, key)
+}
+
+/**
  * Configuration for storeSeparate
  */
-export interface StoreSeparateConfig extends CommonConfig {
+export interface StoreSeparateConfig<O extends Record<string, any>>
+  extends CommonConfig {
   /**
    * An optional unique identifier. Prefixes all keys in localStorage
    * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
    */
   id?: string
+
   /**
-   * Whether or not to check localStorage when an object key is retrieved
-   * @default true
+   * Validate an object before setting it in localStorage or reading it.
+   * Can confirm/deny if the object is valid, along with an optional error message if it is not
+   *
+   * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
    */
-  checkGets?: boolean
+  validate?(
+    value: Readonly<any>,
+    action: 'get' | 'set',
+    key: Keys<O>,
+  ): boolean | readonly [boolean] | readonly [false, Error]
+  /**
+   * Modify an object before setting it in localStorage or reading it.
+   * Called after validate. Any valiation should be done in validate and not here
+   *
+   * @returns A potentially modified version of the object originally passed
+   */
+  modify?(value: O, action: 'get' | 'set', key: Keys<O>): O
 }
 
-const defaultStoreSeparateConfig = ({
+const defaultStoreSeparateConfig = <O extends Record<string, any>>({
   id,
   checkGets,
   set,
   get,
+  validate,
+  modify,
   parse,
   stringify,
-}: StoreSeparateConfig): Omit<Required<StoreSeparateConfig>, 'id'> &
-  Pick<StoreSeparateConfig, 'id'> => {
+}: StoreSeparateConfig<O>): Omit<Required<StoreSeparateConfig<O>>, 'id'> &
+  Pick<StoreSeparateConfig<O>, 'id'> => {
   return {
     id,
+    validate: validate ?? (() => true),
+    modify: modify ?? (value => value),
     ...commonDefaults({ checkGets, set, get, parse, stringify }),
   }
 }
@@ -434,28 +493,49 @@ const defaultStoreSeparateConfig = ({
  */
 export function storeSeparate<
   O extends Record<string, any> = Record<string, any>,
->(defaults: O, configuration: StoreSeparateConfig = {}): O {
-  const { id, checkGets, set, get, parse, stringify } =
+>(defaults: O, configuration: StoreSeparateConfig<O> = {}): O {
+  const { id, checkGets, set, get, validate, modify, parse, stringify } =
     defaultStoreSeparateConfig(configuration)
   const object = { ...defaults } as O
 
+  /** Call validOrThrow with relevant parameters by default */
+  const vot = (value: any, key: Keys<O>, action: 'get' | 'set' = 'set') =>
+    validOrThrowSeparate(validate, modify, value, action, key)
+
+  /** Parse a value from localStorage and set it on the object if valid */
+  const checkSetFromLs = (value: string, key: Keys<O>): O[Keys<O>] => {
+    // Parse value and update it on the object
+    const parsed = parse(value)
+    object[key] = parsed
+
+    const valid = vot(object, key, 'get')
+    return valid[key]
+  }
+
+  /** Validate and stringify a key of the object in its state when the function is called */
+  const checkStringify = (key: Keys<O>): string =>
+    stringify(vot(object, key)[key])
+
   // Set defaults
-  for (const [key, value] of Object.entries(defaults) as [Keys<O>, any][]) {
+  for (const key of Object.keys(defaults) as Keys<O>[]) {
     const keyPrefix = addId(key, id)
     const lsValue = get(keyPrefix)
-    if (!lsValue) set(keyPrefix, stringify(value))
-    else object[key] = parse(lsValue)
+    if (!lsValue) set(keyPrefix, checkStringify(key))
+    else checkSetFromLs(lsValue, key)
   }
 
   return new Proxy(object, {
     set(target, key: Keys<O>, value: any) {
-      set(addId(key, id), stringify(value))
-      return Reflect.set(target, key, value)
+      // It's important that the set to the object happens before the call to validate, modify, etc.
+      const setResult = Reflect.set(target, key, value)
+      set(addId(key, id), checkStringify(key))
+      return setResult
     },
 
     get(target, key: Keys<O>) {
       const value = get(addId(key, id))
-      if (checkGets) target[key] = value ? parse(value) : defaults[key]
+      if (checkGets)
+        value ? checkSetFromLs(value, key) : (target[key] = defaults[key])
 
       if (shouldObjectProxy(target[key])) {
         // Return a Proxy to the object to catch sets
