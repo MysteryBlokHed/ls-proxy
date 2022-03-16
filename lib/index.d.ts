@@ -1,3 +1,4 @@
+import type { Keys } from './types';
 export { default as Validations } from './validations';
 /**
  * Configuration options used between both storeObject and storeSeparate
@@ -154,7 +155,7 @@ export declare function storeObject<O extends Record<string, any> = Record<strin
 /**
  * Configuration for storeSeparate
  */
-export interface StoreSeparateConfig extends CommonConfig {
+export interface StoreSeparateConfig<O extends Record<string, any>> extends CommonConfig {
     /**
      * An optional unique identifier. Prefixes all keys in localStorage
      * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
@@ -165,6 +166,13 @@ export interface StoreSeparateConfig extends CommonConfig {
      * @default true
      */
     checkGets?: boolean;
+    /**
+     * Modify an object before setting it in localStorage or reading it.
+     * Called after validate. Any valiation should be done in validate and not here
+     *
+     * @returns A potentially modified version of the object originally passed
+     */
+    modify?(value: O, action: 'get' | 'set', key: Keys<O>): O;
 }
 /**
  * Set multiple individual keys in localStorage with one object
@@ -185,6 +193,6 @@ export interface StoreSeparateConfig extends CommonConfig {
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-export declare function storeSeparate<O extends Record<string, any> = Record<string, any>>(defaults: O, configuration?: StoreSeparateConfig): O;
+export declare function storeSeparate<O extends Record<string, any> = Record<string, any>>(defaults: O, configuration?: StoreSeparateConfig<O>): O;
 
 export as namespace LSProxy;

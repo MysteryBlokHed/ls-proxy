@@ -119,25 +119,22 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.storeSeparate = exports.storeObject = exports.Validations = void 0;
 var validations_1 = __webpack_require__(/*! ./validations */ "./lib/validations.js");
 Object.defineProperty(exports, "Validations", ({ enumerable: true, get: function () { return validations_1.default; } }));
+const setObj = (target, newObj) => Object.entries(newObj).forEach(([k, v]) => (target[k] = v));
 /**
  * Fill in default values for CommonConfig
  */
-const commonDefaults = ({ checkGets, set, get, parse, stringify, }) => {
-    return {
-        checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
-        set: set !== null && set !== void 0 ? set : ((key, value) => (localStorage[key] = value)),
-        get: get !== null && get !== void 0 ? get : (value => { var _a; return (_a = localStorage[value]) !== null && _a !== void 0 ? _a : null; }),
-        parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
-        stringify: stringify !== null && stringify !== void 0 ? stringify : JSON.stringify,
-    };
-};
+const commonDefaults = ({ checkGets, set, get, parse, stringify, }) => ({
+    checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
+    set: set !== null && set !== void 0 ? set : ((key, value) => (localStorage[key] = value)),
+    get: get !== null && get !== void 0 ? get : (value => { var _a; return (_a = localStorage[value]) !== null && _a !== void 0 ? _a : null; }),
+    parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
+    stringify: stringify !== null && stringify !== void 0 ? stringify : JSON.stringify,
+});
 /**
  * Fill in default values for StoreObjectConfig
  * @template O The stored object
  */
-const defaultStoreObjectConfig = ({ checkGets, partial, set, get, validate, modify, parse, stringify, }) => {
-    return Object.assign({ partial: partial !== null && partial !== void 0 ? partial : false, validate: validate !== null && validate !== void 0 ? validate : (() => true), modify: modify !== null && modify !== void 0 ? modify : (value => value) }, commonDefaults({ checkGets, set, get, parse, stringify }));
-};
+const defaultStoreObjectConfig = ({ checkGets, partial, set, get, validate, modify, parse, stringify, }) => (Object.assign({ partial: partial !== null && partial !== void 0 ? partial : false, validate: validate !== null && validate !== void 0 ? validate : (() => true), modify: modify !== null && modify !== void 0 ? modify : (value => value) }, commonDefaults({ checkGets, set, get, parse, stringify })));
 const shouldObjectProxy = (object) => 
 // Check that the target isn't falsey (primarily in case it's null, since typeof null === 'object')
 object &&
@@ -359,9 +356,7 @@ const validOrThrow = (validate, modify, object, action, lsKey) => {
     }
     return modify(object, action);
 };
-const defaultStoreSeparateConfig = ({ id, checkGets, set, get, parse, stringify, }) => {
-    return Object.assign({ id }, commonDefaults({ checkGets, set, get, parse, stringify }));
-};
+const defaultStoreSeparateConfig = ({ id, checkGets, set, get, modify, parse, stringify, }) => (Object.assign({ id, modify: modify !== null && modify !== void 0 ? modify : (value => value) }, commonDefaults({ checkGets, set, get, parse, stringify })));
 /**
  * Set multiple individual keys in localStorage with one object
  *
@@ -382,7 +377,7 @@ const defaultStoreSeparateConfig = ({ id, checkGets, set, get, parse, stringify,
  * ```
  */
 function storeSeparate(defaults, configuration = {}) {
-    const { id, checkGets, set, get, parse, stringify } = defaultStoreSeparateConfig(configuration);
+    const { id, checkGets, set, get, modify, parse, stringify } = defaultStoreSeparateConfig(configuration);
     const object = Object.assign({}, defaults);
     // Set defaults
     for (const [key, value] of Object.entries(defaults)) {
@@ -395,13 +390,17 @@ function storeSeparate(defaults, configuration = {}) {
     }
     return new Proxy(object, {
         set(target, key, value) {
-            set(addId(key, id), stringify(value));
-            return Reflect.set(target, key, value);
+            const setResult = Reflect.set(target, key, value);
+            // Modify object
+            setObj(target, modify(target, 'set', key));
+            set(addId(key, id), stringify(target[key]));
+            return setResult;
         },
         get(target, key) {
             const value = get(addId(key, id));
             if (checkGets)
                 target[key] = value ? parse(value) : defaults[key];
+            setObj(target, modify(target, 'get', key));
             if (shouldObjectProxy(target[key])) {
                 // Return a Proxy to the object to catch sets
                 return nestedProxyHandler(target, key, target[key], this.set);

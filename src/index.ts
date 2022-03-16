@@ -2,6 +2,9 @@ import type { Keys } from './types'
 
 export { default as Validations } from './validations'
 
+const setObj = (target: any, newObj: Readonly<any>) =>
+  Object.entries(newObj).forEach(([k, v]) => (target[k] = v))
+
 /**
  * Configuration options used between both storeObject and storeSeparate
  */
@@ -47,15 +50,13 @@ const commonDefaults = ({
   get,
   parse,
   stringify,
-}: CommonConfig): Required<CommonConfig> => {
-  return {
-    checkGets: checkGets ?? true,
-    set: set ?? ((key, value) => (localStorage[key] = value)),
-    get: get ?? (value => localStorage[value] ?? null),
-    parse: parse ?? JSON.parse,
-    stringify: stringify ?? JSON.stringify,
-  }
-}
+}: CommonConfig): Required<CommonConfig> => ({
+  checkGets: checkGets ?? true,
+  set: set ?? ((key, value) => (localStorage[key] = value)),
+  get: get ?? (value => localStorage[value] ?? null),
+  parse: parse ?? JSON.parse,
+  stringify: stringify ?? JSON.stringify,
+})
 
 /**
  * Configuration for StoreObjectConfig
@@ -106,14 +107,12 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
   modify,
   parse,
   stringify,
-}: StoreObjectConfig<O>): Required<StoreObjectConfig<O>> => {
-  return {
-    partial: partial ?? false,
-    validate: validate ?? (() => true),
-    modify: modify ?? (value => value),
-    ...commonDefaults({ checkGets, set, get, parse, stringify }),
-  }
-}
+}: StoreObjectConfig<O>): Required<StoreObjectConfig<O>> => ({
+  partial: partial ?? false,
+  validate: validate ?? (() => true),
+  modify: modify ?? (value => value),
+  ...commonDefaults({ checkGets, set, get, parse, stringify }),
+})
 
 const shouldObjectProxy = (object: any) =>
   // Check that the target isn't falsey (primarily in case it's null, since typeof null === 'object')
@@ -385,7 +384,8 @@ const validOrThrow = <O extends Record<string, any>>(
 /**
  * Configuration for storeSeparate
  */
-export interface StoreSeparateConfig extends CommonConfig {
+export interface StoreSeparateConfig<O extends Record<string, any>>
+  extends CommonConfig {
   /**
    * An optional unique identifier. Prefixes all keys in localStorage
    * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
@@ -396,22 +396,29 @@ export interface StoreSeparateConfig extends CommonConfig {
    * @default true
    */
   checkGets?: boolean
+  /**
+   * Modify an object before setting it in localStorage or reading it.
+   * Called after validate. Any valiation should be done in validate and not here
+   *
+   * @returns A potentially modified version of the object originally passed
+   */
+  modify?(value: O, action: 'get' | 'set', key: Keys<O>): O
 }
 
-const defaultStoreSeparateConfig = ({
+const defaultStoreSeparateConfig = <O extends Record<string, any>>({
   id,
   checkGets,
   set,
   get,
+  modify,
   parse,
   stringify,
-}: StoreSeparateConfig): Omit<Required<StoreSeparateConfig>, 'id'> &
-  Pick<StoreSeparateConfig, 'id'> => {
-  return {
-    id,
-    ...commonDefaults({ checkGets, set, get, parse, stringify }),
-  }
-}
+}: StoreSeparateConfig<O>): Omit<Required<StoreSeparateConfig<O>>, 'id'> &
+  Pick<StoreSeparateConfig<O>, 'id'> => ({
+  id,
+  modify: modify ?? (value => value),
+  ...commonDefaults({ checkGets, set, get, parse, stringify }),
+})
 
 /**
  * Set multiple individual keys in localStorage with one object
@@ -434,8 +441,8 @@ const defaultStoreSeparateConfig = ({
  */
 export function storeSeparate<
   O extends Record<string, any> = Record<string, any>,
->(defaults: O, configuration: StoreSeparateConfig = {}): O {
-  const { id, checkGets, set, get, parse, stringify } =
+>(defaults: O, configuration: StoreSeparateConfig<O> = {}): O {
+  const { id, checkGets, set, get, modify, parse, stringify } =
     defaultStoreSeparateConfig(configuration)
   const object = { ...defaults } as O
 
@@ -449,13 +456,18 @@ export function storeSeparate<
 
   return new Proxy(object, {
     set(target, key: Keys<O>, value: any) {
-      set(addId(key, id), stringify(value))
-      return Reflect.set(target, key, value)
+      const setResult = Reflect.set(target, key, value)
+      // Modify object
+      setObj(target, modify(target, 'set', key))
+      set(addId(key, id), stringify(target[key]))
+      return setResult
     },
 
     get(target, key: Keys<O>) {
       const value = get(addId(key, id))
       if (checkGets) target[key] = value ? parse(value) : defaults[key]
+
+      setObj(target, modify(target, 'get', key))
 
       if (shouldObjectProxy(target[key])) {
         // Return a Proxy to the object to catch sets
