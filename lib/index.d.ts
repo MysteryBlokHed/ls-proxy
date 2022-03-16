@@ -1,24 +1,13 @@
 export { default as Validations } from './validations';
 /**
- * Configuration for StoreObjectConfig
- * @template O The stored object
+ * Configuration options used between both storeObject and storeSeparate
  */
-export interface StoreObjectConfig<O extends Record<string, any>> {
+interface CommonConfig {
     /**
      * Whether or not to check localStorage when an object key is retrieved
      * @default true
      */
     checkGets?: boolean;
-    /**
-     * Whether the stored object only contains/stores *some* of the keys on the serialized object.
-     * This is useful if you want an object to look at only some keys of a localStorage object
-     * without overwriting the other ones.
-     *
-     * It's important to note that passing this option effectively enables key validation:
-     * any keys that were not passed are ignored and not passed to validate or modify
-     * @default false
-     */
-    partial?: boolean;
     /**
      * Called whenever a key should be set
      * @param value The value being set
@@ -31,6 +20,34 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
      * @returns The key's value
      */
     get?(key: string): string | null;
+    /**
+     * Function to parse object. Defaults to `JSON.parse`.
+     * Any validation should **NOT** be done here, but in the validate method
+     * @default JSON.parse
+     */
+    parse?: (value: string) => any;
+    /**
+     * Function to stringify object. Defaults to `JSON.stringify`.
+     * Any validation should **NOT** be done here, but in the validate method
+     * @default JSON.stringify
+     */
+    stringify?: (value: any) => string;
+}
+/**
+ * Configuration for StoreObjectConfig
+ * @template O The stored object
+ */
+export interface StoreObjectConfig<O extends Record<string, any>> extends CommonConfig {
+    /**
+     * Whether the stored object only contains/stores *some* of the keys on the serialized object.
+     * This is useful if you want an object to look at only some keys of a localStorage object
+     * without overwriting the other ones.
+     *
+     * It's important to note that passing this option effectively enables key validation:
+     * any keys that were not passed are ignored and not passed to validate or modify
+     * @default false
+     */
+    partial?: boolean;
     /**
      * Validate an object before setting it in localStorage or reading it.
      * Can confirm/deny if the object is valid, along with an optional error message if it is not
@@ -45,18 +62,6 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
      * @returns A potentially modified version of the object originally passed
      */
     modify?(value: O, action: 'get' | 'set'): O;
-    /**
-     * Function to parse object. Defaults to `JSON.parse`.
-     * Any validation should **NOT** be done here, but in the validate method
-     * @default JSON.parse
-     */
-    parse?: (value: string) => any;
-    /**
-     * Function to stringify object. Defaults to `JSON.stringify`.
-     * Any validation should **NOT** be done here, but in the validate method
-     * @default JSON.stringify
-     */
-    stringify?: (value: any) => string;
 }
 /**
  * Store a stringified JSON object in localStorage.
@@ -146,8 +151,10 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  * ```
  */
 export declare function storeObject<O extends Record<string, any> = Record<string, any>>(lsKey: string, defaults: O, configuration?: StoreObjectConfig<O>): O;
-/** Configuration for storeSeparate */
-export interface StoreSeparateConfig {
+/**
+ * Configuration for storeSeparate
+ */
+export interface StoreSeparateConfig extends CommonConfig {
     /**
      * An optional unique identifier. Prefixes all keys in localStorage
      * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
@@ -160,8 +167,7 @@ export interface StoreSeparateConfig {
     checkGets?: boolean;
 }
 /**
- * Set multiple individual keys in localStorage with one object.
- * Note that all values must be strings for this method
+ * Set multiple individual keys in localStorage with one object
  *
  * @param defaults The defaults values if they are undefined
  * @param configuration Config options
@@ -179,6 +185,6 @@ export interface StoreSeparateConfig {
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
  * ```
  */
-export declare function storeSeparate<O extends Record<string, string> = Record<string, string>>(defaults: O, configuration?: StoreSeparateConfig): O;
+export declare function storeSeparate<O extends Record<string, any> = Record<string, any>>(defaults: O, configuration?: StoreSeparateConfig): O;
 
 export as namespace LSProxy;

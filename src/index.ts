@@ -3,25 +3,14 @@ import type { Keys } from './types'
 export { default as Validations } from './validations'
 
 /**
- * Configuration for StoreObjectConfig
- * @template O The stored object
+ * Configuration options used between both storeObject and storeSeparate
  */
-export interface StoreObjectConfig<O extends Record<string, any>> {
+interface CommonConfig {
   /**
    * Whether or not to check localStorage when an object key is retrieved
    * @default true
    */
   checkGets?: boolean
-  /**
-   * Whether the stored object only contains/stores *some* of the keys on the serialized object.
-   * This is useful if you want an object to look at only some keys of a localStorage object
-   * without overwriting the other ones.
-   *
-   * It's important to note that passing this option effectively enables key validation:
-   * any keys that were not passed are ignored and not passed to validate or modify
-   * @default false
-   */
-  partial?: boolean
 
   /**
    * Called whenever a key should be set
@@ -35,6 +24,56 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    * @returns The key's value
    */
   get?(key: string): string | null
+  /**
+   * Function to parse object. Defaults to `JSON.parse`.
+   * Any validation should **NOT** be done here, but in the validate method
+   * @default JSON.parse
+   */
+  parse?: (value: string) => any
+  /**
+   * Function to stringify object. Defaults to `JSON.stringify`.
+   * Any validation should **NOT** be done here, but in the validate method
+   * @default JSON.stringify
+   */
+  stringify?: (value: any) => string
+}
+
+/**
+ * Fill in default values for CommonConfig
+ */
+const commonDefaults = ({
+  checkGets,
+  set,
+  get,
+  parse,
+  stringify,
+}: CommonConfig): Required<CommonConfig> => {
+  return {
+    checkGets: checkGets ?? true,
+    set: set ?? ((key, value) => (localStorage[key] = value)),
+    get: get ?? (value => localStorage[value] ?? null),
+    parse: parse ?? JSON.parse,
+    stringify: stringify ?? JSON.stringify,
+  }
+}
+
+/**
+ * Configuration for StoreObjectConfig
+ * @template O The stored object
+ */
+export interface StoreObjectConfig<O extends Record<string, any>>
+  extends CommonConfig {
+  /**
+   * Whether the stored object only contains/stores *some* of the keys on the serialized object.
+   * This is useful if you want an object to look at only some keys of a localStorage object
+   * without overwriting the other ones.
+   *
+   * It's important to note that passing this option effectively enables key validation:
+   * any keys that were not passed are ignored and not passed to validate or modify
+   * @default false
+   */
+  partial?: boolean
+
   /**
    * Validate an object before setting it in localStorage or reading it.
    * Can confirm/deny if the object is valid, along with an optional error message if it is not
@@ -52,18 +91,6 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    * @returns A potentially modified version of the object originally passed
    */
   modify?(value: O, action: 'get' | 'set'): O
-  /**
-   * Function to parse object. Defaults to `JSON.parse`.
-   * Any validation should **NOT** be done here, but in the validate method
-   * @default JSON.parse
-   */
-  parse?: (value: string) => any
-  /**
-   * Function to stringify object. Defaults to `JSON.stringify`.
-   * Any validation should **NOT** be done here, but in the validate method
-   * @default JSON.stringify
-   */
-  stringify?: (value: any) => string
 }
 
 /**
@@ -81,14 +108,10 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
   stringify,
 }: StoreObjectConfig<O>): Required<StoreObjectConfig<O>> => {
   return {
-    checkGets: checkGets ?? true,
     partial: partial ?? false,
-    set: set ?? ((key, value) => (localStorage[key] = value)),
-    get: get ?? (value => localStorage[value] ?? null),
     validate: validate ?? (() => true),
     modify: modify ?? (value => value),
-    parse: parse ?? JSON.parse,
-    stringify: stringify ?? JSON.stringify,
+    ...commonDefaults({ checkGets, set, get, parse, stringify }),
   }
 }
 
@@ -359,8 +382,10 @@ const validOrThrow = <O extends Record<string, any>>(
   return modify(object, action)
 }
 
-/** Configuration for storeSeparate */
-export interface StoreSeparateConfig {
+/**
+ * Configuration for storeSeparate
+ */
+export interface StoreSeparateConfig extends CommonConfig {
   /**
    * An optional unique identifier. Prefixes all keys in localStorage
    * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
@@ -376,17 +401,20 @@ export interface StoreSeparateConfig {
 const defaultStoreSeparateConfig = ({
   id,
   checkGets,
+  set,
+  get,
+  parse,
+  stringify,
 }: StoreSeparateConfig): Omit<Required<StoreSeparateConfig>, 'id'> &
   Pick<StoreSeparateConfig, 'id'> => {
   return {
     id,
-    checkGets: checkGets ?? true,
+    ...commonDefaults({ checkGets, set, get, parse, stringify }),
   }
 }
 
 /**
- * Set multiple individual keys in localStorage with one object.
- * Note that all values must be strings for this method
+ * Set multiple individual keys in localStorage with one object
  *
  * @param defaults The defaults values if they are undefined
  * @param configuration Config options
@@ -405,26 +433,35 @@ const defaultStoreSeparateConfig = ({
  * ```
  */
 export function storeSeparate<
-  O extends Record<string, string> = Record<string, string>,
+  O extends Record<string, any> = Record<string, any>,
 >(defaults: O, configuration: StoreSeparateConfig = {}): O {
-  const { id, checkGets } = defaultStoreSeparateConfig(configuration)
+  const { id, checkGets, set, get, parse, stringify } =
+    defaultStoreSeparateConfig(configuration)
   const object = { ...defaults } as O
 
   // Set defaults
-  for (const [key, value] of Object.entries(defaults) as [Keys<O>, string][]) {
+  for (const [key, value] of Object.entries(defaults) as [Keys<O>, any][]) {
     const keyPrefix = addId(key, id)
-    if (!localStorage[keyPrefix]) localStorage[keyPrefix] = value
-    else object[key] = localStorage[keyPrefix]
+    const lsValue = get(keyPrefix)
+    if (!lsValue) set(keyPrefix, stringify(value))
+    else object[key] = parse(lsValue)
   }
 
   return new Proxy(object, {
-    set(target, key: Keys<O>, value: string) {
-      localStorage[addId(key, id)] = value
+    set(target, key: Keys<O>, value: any) {
+      set(addId(key, id), stringify(value))
       return Reflect.set(target, key, value)
     },
 
     get(target, key: Keys<O>) {
-      if (checkGets) target[key] = localStorage[addId(key, id)] ?? defaults[key]
+      const value = get(addId(key, id))
+      if (checkGets) target[key] = value ? parse(value) : defaults[key]
+
+      if (shouldObjectProxy(target[key])) {
+        // Return a Proxy to the object to catch sets
+        return nestedProxyHandler(target, key, target[key], this.set! as any)
+      }
+
       return Reflect.get(target, key)
     },
   })
