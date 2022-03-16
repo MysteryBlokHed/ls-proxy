@@ -14,8 +14,8 @@ describe('storeSeparate function', () => {
     expect(localStorage.length).toBe(2)
     expect(localStorage.foo).toBeDefined()
     expect(localStorage.bar).toBeDefined()
-    expect(localStorage.foo).toBe('abc')
-    expect(localStorage.bar).toBe('xyz')
+    expect(localStorage.foo).toBe('"abc"')
+    expect(localStorage.bar).toBe('"xyz"')
   })
 
   it('modifies values in localStorage', () => {
@@ -26,7 +26,7 @@ describe('storeSeparate function', () => {
     myObj.foo = 'def'
 
     expect(myObj.foo).toBe('def')
-    expect(localStorage.foo).toBe('def')
+    expect(localStorage.foo).toBe('"def"')
   })
 
   it('prefixes values with provided ids', () => {
@@ -51,7 +51,7 @@ describe('storeSeparate function', () => {
       bar: 'xyz',
     })
 
-    localStorage.foo = 'def'
+    localStorage.foo = '"def"'
     expect(myObj.foo).toBe('def')
   })
 })
