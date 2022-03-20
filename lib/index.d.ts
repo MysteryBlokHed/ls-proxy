@@ -51,7 +51,7 @@ export interface StoreObjectConfig<O extends Record<string, any>> extends Common
     partial?: boolean;
     /**
      * Validate an object before setting it in localStorage or reading it.
-     * Can confirm/deny if the object is valid, along with an optional error message if it is not
+     * Can confirm/deny if the object is valid, along with an optional error message if it is invalid
      *
      * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
      */
@@ -167,11 +167,22 @@ export interface StoreSeparateConfig<O extends Record<string, any>> extends Comm
      */
     checkGets?: boolean;
     /**
+     * Validate an object before setting it in localStorage or reading it.
+     * Can confirm/deny if the object is valid, along with an optional error message if it is invalid
+     *
+     * @param value A partial version of the originally passed object,
+     * **containing only the key being get/set**
+     * @param key The key being get/set
+     * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
+     */
+    validate?(value: Partial<O>, action: 'get' | 'set', key: Keys<O>): boolean | readonly [boolean] | readonly [false, Error];
+    /**
      * Modify an object before setting it in localStorage or reading it.
      * Called after validate. Any valiation should be done in validate and not here
      *
-     * @param value A partial version of the originally passed object, **containing
-     * only the key being get/set**
+     * @param value A partial version of the originally passed object,
+     * **containing only the key being get/set**
+     * @param key The key being get/set
      * @returns A potentially modified version of the object originally passed.
      * **Only the key used in the value param will be changed in localStorage**
      */
