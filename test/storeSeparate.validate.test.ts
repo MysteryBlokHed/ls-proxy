@@ -1,4 +1,4 @@
-import { storeSeparate, StoreSeparateConfig, Validations } from '../lib'
+import { storeSeparate, StoreSeparateConfig } from '../lib'
 
 afterEach(() => localStorage.clear())
 
