@@ -390,17 +390,17 @@ function storeSeparate(defaults, configuration = {}) {
     }
     return new Proxy(object, {
         set(target, key, value) {
-            const setResult = Reflect.set(target, key, value);
             // Modify object
-            setObj(target, modify(target, 'set', key));
-            set(addId(key, id), stringify(target[key]));
-            return setResult;
+            const modified = modify({ [key]: value }, 'set', key)[key];
+            set(addId(key, id), stringify(modified));
+            return Reflect.set(target, key, modified);
         },
         get(target, key) {
-            const value = get(addId(key, id));
-            if (checkGets)
-                target[key] = value ? parse(value) : defaults[key];
-            setObj(target, modify(target, 'get', key));
+            if (checkGets) {
+                const valueUnparsed = get(addId(key, id));
+                const value = valueUnparsed ? parse(valueUnparsed) : defaults[key];
+                target[key] = modify({ [key]: value }, 'get', key)[key];
+            }
             if (shouldObjectProxy(target[key])) {
                 // Return a Proxy to the object to catch sets
                 return nestedProxyHandler(target, key, target[key], this.set);

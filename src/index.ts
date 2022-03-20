@@ -400,9 +400,12 @@ export interface StoreSeparateConfig<O extends Record<string, any>>
    * Modify an object before setting it in localStorage or reading it.
    * Called after validate. Any valiation should be done in validate and not here
    *
-   * @returns A potentially modified version of the object originally passed
+   * @param value A partial version of the originally passed object, **containing
+   * only the key being get/set**
+   * @returns A potentially modified version of the object originally passed.
+   * **Only the key used in the value param will be changed in localStorage**
    */
-  modify?(value: O, action: 'get' | 'set', key: Keys<O>): O
+  modify?(value: Partial<O>, action: 'get' | 'set', key: Keys<O>): Partial<O>
 }
 
 const defaultStoreSeparateConfig = <O extends Record<string, any>>({
@@ -456,18 +459,18 @@ export function storeSeparate<
 
   return new Proxy(object, {
     set(target, key: Keys<O>, value: any) {
-      const setResult = Reflect.set(target, key, value)
       // Modify object
-      setObj(target, modify(target, 'set', key))
-      set(addId(key, id), stringify(target[key]))
-      return setResult
+      const modified = modify({ [key]: value } as Partial<O>, 'set', key)[key]!
+      set(addId(key, id), stringify(modified))
+      return Reflect.set(target, key, modified)
     },
 
     get(target, key: Keys<O>) {
-      const value = get(addId(key, id))
-      if (checkGets) target[key] = value ? parse(value) : defaults[key]
-
-      setObj(target, modify(target, 'get', key))
+      if (checkGets) {
+        const valueUnparsed = get(addId(key, id))
+        const value = valueUnparsed ? parse(valueUnparsed) : defaults[key]
+        target[key] = modify({ [key]: value } as Partial<O>, 'get', key)[key]!
+      }
 
       if (shouldObjectProxy(target[key])) {
         // Return a Proxy to the object to catch sets

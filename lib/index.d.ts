@@ -170,9 +170,12 @@ export interface StoreSeparateConfig<O extends Record<string, any>> extends Comm
      * Modify an object before setting it in localStorage or reading it.
      * Called after validate. Any valiation should be done in validate and not here
      *
-     * @returns A potentially modified version of the object originally passed
+     * @param value A partial version of the originally passed object, **containing
+     * only the key being get/set**
+     * @returns A potentially modified version of the object originally passed.
+     * **Only the key used in the value param will be changed in localStorage**
      */
-    modify?(value: O, action: 'get' | 'set', key: Keys<O>): O;
+    modify?(value: Partial<O>, action: 'get' | 'set', key: Keys<O>): Partial<O>;
 }
 /**
  * Set multiple individual keys in localStorage with one object
