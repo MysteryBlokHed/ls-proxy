@@ -488,14 +488,75 @@ const validOrThrowSeparate = <O extends Record<string, any>>(
  *
  * @example
  * ```typescript
+ * // No validation
  * import { storeSeparate } from 'ls-proxy'
  *
  * const myObj = storeSeparate({
  *   foo: 'bar',
+ *   abc: 123,
+ *   numbers: [1, 2, 3],
  * })
  *
  * myObj.foo = 'baz' // Updates localStorage
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
+ * console.log(myObj.abc === localStorage.abc) // true
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Validating that the key being set/get is correct
+ * import { storeSeparate } from 'ls-proxy'
+ *
+ * const myObj = storeSeparate(
+ *   {
+ *     foo: 'bar',
+ *     abc: 123,
+ *   },
+ *   {
+ *     validate(value, action, key) {
+ *       if (key !== 'foo' && key !== 'abc') return false
+ *       return true
+ *     },
+ *   },
+ * )
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Using IDs to avoid conflicting names
+ * import { storeSeparate } from 'ls-proxy'
+ *
+ * const obj1 = storeSeparate({ foo: 'bar' }, { id: 'obj1' })
+ * const obj2 = storeSeparate({ foo: 123 }, { id: 'obj2' })
+ *
+ * console.log(obj1.foo) // bar
+ * console.log(obj2.foo) // 123
+ * console.log(localStorage['obj1.foo']) // "bar"
+ * console.log(localStorage['obj2.foo']) // 123
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Automatically change a key while being set/get
+ * import { storeSeparate } from 'ls-proxy'
+ *
+ * const myObj = storeSeparate(
+ *   { base64Value: 'foo' },
+ *   {
+ *     modify(value, action, key) {
+ *       if (key === 'base64Value') {
+ *         // Decode base64 on get
+ *         if (action === 'get') value[key] = window.btoa(value[key]!)
+ *         // Encode base64 on set
+ *         else value[key] = window.atob(value[key]!)
+ *       }
+ *       return value
+ *     },
+ *   },
+ * )
+ *
+ * myObj.base64Value = 'bar' // Encoded in localStorage
+ * console.log(myObj.base64Value) // Logs 'bar', decoded from localStorage
  * ```
  */
 export function storeSeparate<
