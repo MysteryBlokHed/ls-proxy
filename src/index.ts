@@ -453,8 +453,12 @@ export function storeSeparate<
   for (const [key, value] of Object.entries(defaults) as [Keys<O>, any][]) {
     const keyPrefix = addId(key, id)
     const lsValue = get(keyPrefix)
-    if (!lsValue) set(keyPrefix, stringify(value))
-    else object[key] = parse(lsValue)
+    if (!lsValue) {
+      set(
+        keyPrefix,
+        stringify(modify({ [key]: value } as Partial<O>, 'set', key)[key]),
+      )
+    } else object[key] = parse(lsValue)
   }
 
   return new Proxy(object, {
