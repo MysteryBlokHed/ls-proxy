@@ -1,3 +1,4 @@
+// Only works with storeObject
 import { storeObject, Validations } from 'ls-proxy'
 
 interface Person {

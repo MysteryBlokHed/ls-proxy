@@ -1,3 +1,4 @@
+// Only works with storeObject
 // Using two objects to watch different keys on the same object in localStorage
 import { storeObject } from 'ls-proxy'
 
