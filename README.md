@@ -18,8 +18,8 @@ but doing this manually or having to call a function that does it for you any ti
 
 This library solves these problems using JS proxies.
 It also has great IDE support thanks to it being written in TypeScript.
-You can also use it with vanilla JS with the Webpacked file (`ls-proxy.user.js`),
-which is useful to test it in the browser or while writing UserScripts.
+You can also use it with vanilla JS with the Webpacked file (`ls-proxy.user.js` or `ls-proxy.min.user.js`),
+which is useful to test it in the browser, when not using a JS bundler, or while writing UserScripts.
 
 Here's all it takes to store a stringifed JSON object in localStorage and automatically change it:
 
@@ -42,12 +42,45 @@ someInfo.aNumber = 42 // Updates localStorage
 console.log(someInfo.aList) // Reads from localStorage
 ```
 
+The method above stores an entire serialized object in localStorage,
+meaning the entire object has to be stringified/parsed whenever a single key
+is affected. The method below stores each key individually instead:
+
+```typescript
+import { storeSeparate } from 'ls-proxy'
+
+const someInfo = storeObject(
+  // The object to store
+  {
+    aString: 'Hello, World!',
+    aNumber: 123,
+    aBoolean: true,
+    aList: [1, '2', 3],
+  },
+  // Optional; prefixes the stored keys with this ID
+  { id: 'someInfo' },
+)
+
+someInfo.aNumber = 42 // Updates localStorage
+console.log(someInfo.aList) // Reads from localStorage
+```
+
 ## Documentation
 
 Documentation for the main branch is hosted at <https://ls-proxy.adamts.me>.
 Documentation can be built from a cloned repository by running `yarn doc`.
 
 Examples are located in [`examples`](https://gitlab.com/MysteryBlokHed/ls-proxy/-/tree/main/examples).
+
+## storeObject vs storeSeparate
+
+`storeSeparate` will generally be faster than `storeObject`
+since there's less data being serialized/deserialized with each get/set,
+but there are still reasons to use `storeObject`.
+For example, if you want to use `validate` and `modify` (see documentation for config options),
+and you need the entire object for context.
+This can be the case if you need another key's value to validate the object,
+or if you want to modify multiple keys with a single set/get.
 
 ## Use
 
