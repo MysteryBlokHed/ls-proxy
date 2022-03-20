@@ -2,26 +2,18 @@ import type { Keys } from './types'
 
 export { default as Validations } from './validations'
 
+const setObj = (target: any, newObj: Readonly<any>) =>
+  Object.entries(newObj).forEach(([k, v]) => (target[k] = v))
+
 /**
- * Configuration for StoreObjectConfig
- * @template O The stored object
+ * Configuration options used between both storeObject and storeSeparate
  */
-export interface StoreObjectConfig<O extends Record<string, any>> {
+interface CommonConfig {
   /**
    * Whether or not to check localStorage when an object key is retrieved
    * @default true
    */
   checkGets?: boolean
-  /**
-   * Whether the stored object only contains/stores *some* of the keys on the serialized object.
-   * This is useful if you want an object to look at only some keys of a localStorage object
-   * without overwriting the other ones.
-   *
-   * It's important to note that passing this option effectively enables key validation:
-   * any keys that were not passed are ignored and not passed to validate or modify
-   * @default false
-   */
-  partial?: boolean
 
   /**
    * Called whenever a key should be set
@@ -35,23 +27,6 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
    * @returns The key's value
    */
   get?(key: string): string | null
-  /**
-   * Validate an object before setting it in localStorage or reading it.
-   * Can confirm/deny if the object is valid, along with an optional error message if it is not
-   *
-   * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
-   */
-  validate?(
-    value: Readonly<any>,
-    action: 'get' | 'set',
-  ): boolean | readonly [boolean] | readonly [false, Error]
-  /**
-   * Modify an object before setting it in localStorage or reading it.
-   * Called after validate. Any valiation should be done in validate and not here
-   *
-   * @returns A potentially modified version of the object originally passed
-   */
-  modify?(value: O, action: 'get' | 'set'): O
   /**
    * Function to parse object. Defaults to `JSON.parse`.
    * Any validation should **NOT** be done here, but in the validate method
@@ -67,6 +42,59 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
 }
 
 /**
+ * Fill in default values for CommonConfig
+ */
+const commonDefaults = ({
+  checkGets,
+  set,
+  get,
+  parse,
+  stringify,
+}: CommonConfig): Required<CommonConfig> => ({
+  checkGets: checkGets ?? true,
+  set: set ?? ((key, value) => (localStorage[key] = value)),
+  get: get ?? (value => localStorage[value] ?? null),
+  parse: parse ?? JSON.parse,
+  stringify: stringify ?? JSON.stringify,
+})
+
+/**
+ * Configuration for StoreObjectConfig
+ * @template O The stored object
+ */
+export interface StoreObjectConfig<O extends Record<string, any>>
+  extends CommonConfig {
+  /**
+   * Whether the stored object only contains/stores *some* of the keys on the serialized object.
+   * This is useful if you want an object to look at only some keys of a localStorage object
+   * without overwriting the other ones.
+   *
+   * It's important to note that passing this option effectively enables key validation:
+   * any keys that were not passed are ignored and not passed to validate or modify
+   * @default false
+   */
+  partial?: boolean
+
+  /**
+   * Validate an object before setting it in localStorage or reading it.
+   * Can confirm/deny if the object is valid, along with an optional error message if it is invalid
+   *
+   * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
+   */
+  validate?(
+    value: Readonly<any>,
+    action: 'get' | 'set',
+  ): boolean | readonly [boolean] | readonly [false, Error]
+  /**
+   * Modify an object before setting it in localStorage or reading it.
+   * Called after validate. Any valiation should be done in validate and not here
+   *
+   * @returns A potentially modified version of the object originally passed
+   */
+  modify?(value: O, action: 'get' | 'set'): O
+}
+
+/**
  * Fill in default values for StoreObjectConfig
  * @template O The stored object
  */
@@ -79,18 +107,12 @@ const defaultStoreObjectConfig = <O extends Record<string, any>>({
   modify,
   parse,
   stringify,
-}: StoreObjectConfig<O>): Required<StoreObjectConfig<O>> => {
-  return {
-    checkGets: checkGets ?? true,
-    partial: partial ?? false,
-    set: set ?? ((key, value) => (localStorage[key] = value)),
-    get: get ?? (value => localStorage[value] ?? null),
-    validate: validate ?? (() => true),
-    modify: modify ?? (value => value),
-    parse: parse ?? JSON.parse,
-    stringify: stringify ?? JSON.stringify,
-  }
-}
+}: StoreObjectConfig<O>): Required<StoreObjectConfig<O>> => ({
+  partial: partial ?? false,
+  validate: validate ?? (() => true),
+  modify: modify ?? (value => value),
+  ...commonDefaults({ checkGets, set, get, parse, stringify }),
+})
 
 const shouldObjectProxy = (object: any) =>
   // Check that the target isn't falsey (primarily in case it's null, since typeof null === 'object')
@@ -137,6 +159,55 @@ const nestedProxyHandler = <
       return Reflect.get(target, key)
     },
   })
+}
+
+const validateResult = (
+  valid: ReturnType<Required<StoreObjectConfig<never>>['validate']>,
+  defaultError: Error,
+): [true] | [false, Error] => {
+  // Throw error on failure
+  if (typeof valid === 'boolean') {
+    // Return is bool
+    if (!valid) return [valid, defaultError]
+    return [valid]
+  } else {
+    // Return is array
+    if (!valid[0]) {
+      if (valid.length === 2) return [valid[0], valid[1]]
+      else return [valid[0], defaultError]
+    }
+    return [valid[0]]
+  }
+}
+
+/**
+ * Validate and modify an object
+ *
+ * @param validate Function to validate the object
+ * @param modify Function to modify the object
+ * @param object The object to modify
+ * @param action Whether the object is being get or set
+ * @param lsKey The key in localStorage
+ * @template O The stored object
+ * @returns The object if valid
+ */
+const validOrThrow = <O extends Record<string, any>>(
+  validate: Required<StoreObjectConfig<O>>['validate'],
+  modify: Required<StoreObjectConfig<O>>['modify'],
+  object: Readonly<O>,
+  action: 'get' | 'set',
+  lsKey: string,
+): O => {
+  const error = new TypeError(
+    action === 'get'
+      ? `Validation failed while parsing ${lsKey} from localStorage`
+      : `Validation failed while setting to ${lsKey} in localStorage`,
+  )
+
+  const valid = validateResult(validate(object, action), error)
+  if (!valid[0]) throw valid[1]
+
+  return modify(object, action)
 }
 
 /**
@@ -319,48 +390,10 @@ export function storeObject<
 }
 
 /**
- * Validate and modify an object
- *
- * @param validate Return from the validate function
- * @param modify Function to modify the object
- * @param object The object to modify
- * @param action Whether the object is being get or set
- * @param lsKey The key in localStorage
- * @template O The stored object
- * @returns The object if valid
+ * Configuration for storeSeparate
  */
-const validOrThrow = <O extends Record<string, any>>(
-  validate: Required<StoreObjectConfig<O>>['validate'],
-  modify: Required<StoreObjectConfig<O>>['modify'],
-  object: Readonly<O>,
-  action: 'get' | 'set',
-  lsKey: string,
-): O => {
-  const error = new TypeError(
-    action === 'get'
-      ? `Validation failed while parsing ${lsKey} from localStorage`
-      : `Validation failed while setting to ${lsKey} in localStorage`,
-  )
-
-  const valid = validate(object, action)
-
-  // Throw error on failure
-  if (typeof valid === 'boolean') {
-    // Return is bool
-    if (!valid) throw error
-  } else if (Array.isArray(valid)) {
-    // Return is array
-    if (!valid[0]) {
-      if (valid.length === 2) throw valid[1]
-      else throw error
-    }
-  }
-
-  return modify(object, action)
-}
-
-/** Configuration for storeSeparate */
-export interface StoreSeparateConfig {
+export interface StoreSeparateConfig<O extends Record<string, any>>
+  extends CommonConfig {
   /**
    * An optional unique identifier. Prefixes all keys in localStorage
    * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
@@ -371,22 +404,83 @@ export interface StoreSeparateConfig {
    * @default true
    */
   checkGets?: boolean
+
+  /**
+   * Validate an object before setting it in localStorage or reading it.
+   * Can confirm/deny if the object is valid, along with an optional error message if it is invalid
+   *
+   * @param value A partial version of the originally passed object,
+   * **containing only the key being get/set**
+   * @param key The key being get/set
+   * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
+   */
+  validate?(
+    value: Partial<O>,
+    action: 'get' | 'set',
+    key: Keys<O>,
+  ): boolean | readonly [boolean] | readonly [false, Error]
+  /**
+   * Modify an object before setting it in localStorage or reading it.
+   * Called after validate. Any valiation should be done in validate and not here
+   *
+   * @param value A partial version of the originally passed object,
+   * **containing only the key being get/set**
+   * @param key The key being get/set
+   * @returns A potentially modified version of the object originally passed.
+   * **Only the key used in the value param will be changed in localStorage**
+   */
+  modify?(value: Partial<O>, action: 'get' | 'set', key: Keys<O>): Partial<O>
 }
 
-const defaultStoreSeparateConfig = ({
+const defaultStoreSeparateConfig = <O extends Record<string, any>>({
   id,
   checkGets,
-}: StoreSeparateConfig): Omit<Required<StoreSeparateConfig>, 'id'> &
-  Pick<StoreSeparateConfig, 'id'> => {
-  return {
-    id,
-    checkGets: checkGets ?? true,
-  }
+  set,
+  get,
+  validate,
+  modify,
+  parse,
+  stringify,
+}: StoreSeparateConfig<O>): Omit<Required<StoreSeparateConfig<O>>, 'id'> &
+  Pick<StoreSeparateConfig<O>, 'id'> => ({
+  id,
+  validate: validate ?? (() => true),
+  modify: modify ?? (value => value),
+  ...commonDefaults({ checkGets, set, get, parse, stringify }),
+})
+
+/**
+ * Validate and modify a value
+ *
+ * @param validate Function to validate the object
+ * @param modify Function to modify the object
+ * @param object The object to modify
+ * @param action Whether the object is being get or set
+ * @param key The key being validated/modified
+ * @template O The stored object
+ * @returns The value, if valid
+ */
+const validOrThrowSeparate = <O extends Record<string, any>>(
+  validate: Required<StoreSeparateConfig<O>>['validate'],
+  modify: Required<StoreSeparateConfig<O>>['modify'],
+  object: Readonly<Partial<O>>,
+  action: 'get' | 'set',
+  key: Keys<O>,
+): Partial<O> => {
+  const error = new TypeError(
+    action === 'get'
+      ? `Validation failed while parsing ${key} from localStorage`
+      : `Validation failed while setting to ${key} in localStorage`,
+  )
+
+  const valid = validateResult(validate(object, action, key), error)
+  if (!valid[0]) throw valid[1]
+
+  return modify(object, action, key)
 }
 
 /**
- * Set multiple individual keys in localStorage with one object.
- * Note that all values must be strings for this method
+ * Set multiple individual keys in localStorage with one object
  *
  * @param defaults The defaults values if they are undefined
  * @param configuration Config options
@@ -394,37 +488,123 @@ const defaultStoreSeparateConfig = ({
  *
  * @example
  * ```typescript
+ * // No validation
  * import { storeSeparate } from 'ls-proxy'
  *
  * const myObj = storeSeparate({
  *   foo: 'bar',
+ *   abc: 123,
+ *   numbers: [1, 2, 3],
  * })
  *
  * myObj.foo = 'baz' // Updates localStorage
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
+ * console.log(myObj.abc === localStorage.abc) // true
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Validating that the key being set/get is correct
+ * import { storeSeparate } from 'ls-proxy'
+ *
+ * const myObj = storeSeparate(
+ *   {
+ *     foo: 'bar',
+ *     abc: 123,
+ *   },
+ *   {
+ *     validate(value, action, key) {
+ *       if (key !== 'foo' && key !== 'abc') return false
+ *       return true
+ *     },
+ *   },
+ * )
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Using IDs to avoid conflicting names
+ * import { storeSeparate } from 'ls-proxy'
+ *
+ * const obj1 = storeSeparate({ foo: 'bar' }, { id: 'obj1' })
+ * const obj2 = storeSeparate({ foo: 123 }, { id: 'obj2' })
+ *
+ * console.log(obj1.foo) // bar
+ * console.log(obj2.foo) // 123
+ * console.log(localStorage['obj1.foo']) // "bar"
+ * console.log(localStorage['obj2.foo']) // 123
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Automatically change a key while being set/get
+ * import { storeSeparate } from 'ls-proxy'
+ *
+ * const myObj = storeSeparate(
+ *   { base64Value: 'foo' },
+ *   {
+ *     modify(value, action, key) {
+ *       if (key === 'base64Value') {
+ *         // Decode base64 on get
+ *         if (action === 'get') value[key] = window.btoa(value[key]!)
+ *         // Encode base64 on set
+ *         else value[key] = window.atob(value[key]!)
+ *       }
+ *       return value
+ *     },
+ *   },
+ * )
+ *
+ * myObj.base64Value = 'bar' // Encoded in localStorage
+ * console.log(myObj.base64Value) // Logs 'bar', decoded from localStorage
  * ```
  */
 export function storeSeparate<
-  O extends Record<string, string> = Record<string, string>,
->(defaults: O, configuration: StoreSeparateConfig = {}): O {
-  const { id, checkGets } = defaultStoreSeparateConfig(configuration)
+  O extends Record<string, any> = Record<string, any>,
+>(defaults: O, configuration: StoreSeparateConfig<O> = {}): O {
+  const { id, checkGets, set, get, validate, modify, parse, stringify } =
+    defaultStoreSeparateConfig(configuration)
   const object = { ...defaults } as O
 
+  /** Call validOrThrow with relevant parameters by default */
+  const vot = (key: Keys<O>, value: any, action: 'get' | 'set') =>
+    validOrThrowSeparate(
+      validate,
+      modify,
+      { [key]: value } as Partial<O>,
+      action,
+      key,
+    )[key]!
+
   // Set defaults
-  for (const [key, value] of Object.entries(defaults) as [Keys<O>, string][]) {
+  for (const [key, value] of Object.entries(defaults) as [Keys<O>, any][]) {
     const keyPrefix = addId(key, id)
-    if (!localStorage[keyPrefix]) localStorage[keyPrefix] = value
-    else object[key] = localStorage[keyPrefix]
+    const lsValue = get(keyPrefix)
+    if (!lsValue) {
+      set(keyPrefix, stringify(vot(key, value, 'set')))
+    } else object[key] = vot(parse(lsValue), key, 'get')
   }
 
   return new Proxy(object, {
-    set(target, key: Keys<O>, value: string) {
-      localStorage[addId(key, id)] = value
-      return Reflect.set(target, key, value)
+    set(target, key: Keys<O>, value: any) {
+      // Modify object
+      const modified = vot(key, value, 'set')
+      set(addId(key, id), stringify(modified))
+      return Reflect.set(target, key, modified)
     },
 
     get(target, key: Keys<O>) {
-      if (checkGets) target[key] = localStorage[addId(key, id)] ?? defaults[key]
+      if (checkGets) {
+        const valueUnparsed = get(addId(key, id))
+        const value = valueUnparsed ? parse(valueUnparsed) : defaults[key]
+        target[key] = vot(key, value, 'get')
+      }
+
+      if (shouldObjectProxy(target[key])) {
+        // Return a Proxy to the object to catch sets
+        return nestedProxyHandler(target, key, target[key], this.set! as any)
+      }
+
       return Reflect.get(target, key)
     },
   })

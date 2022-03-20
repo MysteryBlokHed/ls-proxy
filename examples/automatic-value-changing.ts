@@ -1,3 +1,4 @@
+// Changing other keys than the one being accessed only works with storeObject
 import { storeObject } from 'ls-proxy'
 
 interface Person {

@@ -1,24 +1,14 @@
+import type { Keys } from './types';
 export { default as Validations } from './validations';
 /**
- * Configuration for StoreObjectConfig
- * @template O The stored object
+ * Configuration options used between both storeObject and storeSeparate
  */
-export interface StoreObjectConfig<O extends Record<string, any>> {
+interface CommonConfig {
     /**
      * Whether or not to check localStorage when an object key is retrieved
      * @default true
      */
     checkGets?: boolean;
-    /**
-     * Whether the stored object only contains/stores *some* of the keys on the serialized object.
-     * This is useful if you want an object to look at only some keys of a localStorage object
-     * without overwriting the other ones.
-     *
-     * It's important to note that passing this option effectively enables key validation:
-     * any keys that were not passed are ignored and not passed to validate or modify
-     * @default false
-     */
-    partial?: boolean;
     /**
      * Called whenever a key should be set
      * @param value The value being set
@@ -32,20 +22,6 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
      */
     get?(key: string): string | null;
     /**
-     * Validate an object before setting it in localStorage or reading it.
-     * Can confirm/deny if the object is valid, along with an optional error message if it is not
-     *
-     * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
-     */
-    validate?(value: Readonly<any>, action: 'get' | 'set'): boolean | readonly [boolean] | readonly [false, Error];
-    /**
-     * Modify an object before setting it in localStorage or reading it.
-     * Called after validate. Any valiation should be done in validate and not here
-     *
-     * @returns A potentially modified version of the object originally passed
-     */
-    modify?(value: O, action: 'get' | 'set'): O;
-    /**
      * Function to parse object. Defaults to `JSON.parse`.
      * Any validation should **NOT** be done here, but in the validate method
      * @default JSON.parse
@@ -57,6 +33,36 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
      * @default JSON.stringify
      */
     stringify?: (value: any) => string;
+}
+/**
+ * Configuration for StoreObjectConfig
+ * @template O The stored object
+ */
+export interface StoreObjectConfig<O extends Record<string, any>> extends CommonConfig {
+    /**
+     * Whether the stored object only contains/stores *some* of the keys on the serialized object.
+     * This is useful if you want an object to look at only some keys of a localStorage object
+     * without overwriting the other ones.
+     *
+     * It's important to note that passing this option effectively enables key validation:
+     * any keys that were not passed are ignored and not passed to validate or modify
+     * @default false
+     */
+    partial?: boolean;
+    /**
+     * Validate an object before setting it in localStorage or reading it.
+     * Can confirm/deny if the object is valid, along with an optional error message if it is invalid
+     *
+     * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
+     */
+    validate?(value: Readonly<any>, action: 'get' | 'set'): boolean | readonly [boolean] | readonly [false, Error];
+    /**
+     * Modify an object before setting it in localStorage or reading it.
+     * Called after validate. Any valiation should be done in validate and not here
+     *
+     * @returns A potentially modified version of the object originally passed
+     */
+    modify?(value: O, action: 'get' | 'set'): O;
 }
 /**
  * Store a stringified JSON object in localStorage.
@@ -146,8 +152,10 @@ export interface StoreObjectConfig<O extends Record<string, any>> {
  * ```
  */
 export declare function storeObject<O extends Record<string, any> = Record<string, any>>(lsKey: string, defaults: O, configuration?: StoreObjectConfig<O>): O;
-/** Configuration for storeSeparate */
-export interface StoreSeparateConfig {
+/**
+ * Configuration for storeSeparate
+ */
+export interface StoreSeparateConfig<O extends Record<string, any>> extends CommonConfig {
     /**
      * An optional unique identifier. Prefixes all keys in localStorage
      * with this id (eg. stores `foo` in localStorage as `myid.foo` for `myid`)
@@ -158,10 +166,30 @@ export interface StoreSeparateConfig {
      * @default true
      */
     checkGets?: boolean;
+    /**
+     * Validate an object before setting it in localStorage or reading it.
+     * Can confirm/deny if the object is valid, along with an optional error message if it is invalid
+     *
+     * @param value A partial version of the originally passed object,
+     * **containing only the key being get/set**
+     * @param key The key being get/set
+     * @returns A boolean to confirm validity or false and optionally an Error instance to deny validity
+     */
+    validate?(value: Partial<O>, action: 'get' | 'set', key: Keys<O>): boolean | readonly [boolean] | readonly [false, Error];
+    /**
+     * Modify an object before setting it in localStorage or reading it.
+     * Called after validate. Any valiation should be done in validate and not here
+     *
+     * @param value A partial version of the originally passed object,
+     * **containing only the key being get/set**
+     * @param key The key being get/set
+     * @returns A potentially modified version of the object originally passed.
+     * **Only the key used in the value param will be changed in localStorage**
+     */
+    modify?(value: Partial<O>, action: 'get' | 'set', key: Keys<O>): Partial<O>;
 }
 /**
- * Set multiple individual keys in localStorage with one object.
- * Note that all values must be strings for this method
+ * Set multiple individual keys in localStorage with one object
  *
  * @param defaults The defaults values if they are undefined
  * @param configuration Config options
@@ -169,16 +197,77 @@ export interface StoreSeparateConfig {
  *
  * @example
  * ```typescript
+ * // No validation
  * import { storeSeparate } from 'ls-proxy'
  *
  * const myObj = storeSeparate({
  *   foo: 'bar',
+ *   abc: 123,
+ *   numbers: [1, 2, 3],
  * })
  *
  * myObj.foo = 'baz' // Updates localStorage
  * console.log(myObj.foo) // Checks localStorage if checkGets is true
+ * console.log(myObj.abc === localStorage.abc) // true
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Validating that the key being set/get is correct
+ * import { storeSeparate } from 'ls-proxy'
+ *
+ * const myObj = storeSeparate(
+ *   {
+ *     foo: 'bar',
+ *     abc: 123,
+ *   },
+ *   {
+ *     validate(value, action, key) {
+ *       if (key !== 'foo' && key !== 'abc') return false
+ *       return true
+ *     },
+ *   },
+ * )
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Using IDs to avoid conflicting names
+ * import { storeSeparate } from 'ls-proxy'
+ *
+ * const obj1 = storeSeparate({ foo: 'bar' }, { id: 'obj1' })
+ * const obj2 = storeSeparate({ foo: 123 }, { id: 'obj2' })
+ *
+ * console.log(obj1.foo) // bar
+ * console.log(obj2.foo) // 123
+ * console.log(localStorage['obj1.foo']) // "bar"
+ * console.log(localStorage['obj2.foo']) // 123
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Automatically change a key while being set/get
+ * import { storeSeparate } from 'ls-proxy'
+ *
+ * const myObj = storeSeparate(
+ *   { base64Value: 'foo' },
+ *   {
+ *     modify(value, action, key) {
+ *       if (key === 'base64Value') {
+ *         // Decode base64 on get
+ *         if (action === 'get') value[key] = window.btoa(value[key]!)
+ *         // Encode base64 on set
+ *         else value[key] = window.atob(value[key]!)
+ *       }
+ *       return value
+ *     },
+ *   },
+ * )
+ *
+ * myObj.base64Value = 'bar' // Encoded in localStorage
+ * console.log(myObj.base64Value) // Logs 'bar', decoded from localStorage
  * ```
  */
-export declare function storeSeparate<O extends Record<string, string> = Record<string, string>>(defaults: O, configuration?: StoreSeparateConfig): O;
+export declare function storeSeparate<O extends Record<string, any> = Record<string, any>>(defaults: O, configuration?: StoreSeparateConfig<O>): O;
 
 export as namespace LSProxy;
