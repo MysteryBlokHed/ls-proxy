@@ -125,19 +125,19 @@ export interface StoreObjectConfig<O extends Record<string, any>> extends Common
  *   minor: boolean
  * }
  *
- * const myPerson = storeObject(
+ * const myPerson = storeObject<Person>(
  *   'myPerson',
  *   {
  *     name: 'Ellie',
  *     age: 17,
  *     minor: true,
- *   } as Person,
+ *   },
  *   {
  *     // If the person's age is 18 or greater, set minor to false.
  *     // Otherwise, set it to true.
  *     // This will affect values as they're being stored in localStorage
  *     // and retrieved from it
- *     validate(value) {
+ *     modify(value) {
  *       if (value.age >= 18) value.minor = false
  *       else value.minor = true
  *       return value

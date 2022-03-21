@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        ls-proxy
 // @descripton  Wrapper around localStorage to easily store JSON objects
-// @version     0.4.0
+// @version     0.5.0
 // @author      Adam Thompson-Sharpe
 // @license     MIT OR Apache-2.0
 // @homepageURL https://gitlab.com/MysteryBlokHed/ls-proxy
@@ -264,19 +264,19 @@ const validOrThrow = (validate, modify, object, action, lsKey) => {
  *   minor: boolean
  * }
  *
- * const myPerson = storeObject(
+ * const myPerson = storeObject<Person>(
  *   'myPerson',
  *   {
  *     name: 'Ellie',
  *     age: 17,
  *     minor: true,
- *   } as Person,
+ *   },
  *   {
  *     // If the person's age is 18 or greater, set minor to false.
  *     // Otherwise, set it to true.
  *     // This will affect values as they're being stored in localStorage
  *     // and retrieved from it
- *     validate(value) {
+ *     modify(value) {
  *       if (value.age >= 18) value.minor = false
  *       else value.minor = true
  *       return value
