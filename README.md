@@ -207,9 +207,9 @@ This project is licensed under either of
 
 at your option.
 
-This project was created from [a template](https://gitlab.com/MysteryBlokHed/ls-proxy)
+This project was created from [a template](https://gitlab.com/MysteryBlokHed/webpack-ts-userscript-library)
 licensed under the MIT license
-([LICENSE](https://gitlab.com/MysteryBlokHed/ls-proxy/-/blob/main/LICENSE)
+([LICENSE](https://gitlab.com/MysteryBlokHed/webpack-ts-userscript-library/-/blob/main/LICENSE)
 or <http://opensource.org/licenses/MIT>).
 
 [build badge]: https://img.shields.io/gitlab/pipeline-status/MysteryBlokHed/ls-proxy
