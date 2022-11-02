@@ -67,10 +67,8 @@ export function storeStateful<
       object[key] = value
     },
 
-    // Return current value from original object
-    get(key) {
-      return object[key]
-    },
+    // Should never be called due to config
+    get: () => null,
 
     // Don't parse anything since raw object is stored
     parse: value => value,
