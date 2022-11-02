@@ -1,6 +1,8 @@
 import { StoreSeparateConfig } from '..';
-declare type SetState<T> = (value: T) => void;
-declare type UseState = <T>(value: T) => [T, SetState<T>];
+/** Basic signature for React setState function */
+export declare type SetState<T> = (value: T) => void;
+/** Basic signature for React useState function */
+export declare type UseState = <T>(value: T) => [T, SetState<T>];
 export declare type Options<O extends Record<string, any>> = Omit<StoreSeparateConfig<O>, 'checkGets' | 'checkDefaults' | 'parse' | 'set' | 'stringify'>;
 /**
  * Store multiple separate values in state that are automatically updated
@@ -24,4 +26,3 @@ export declare type Options<O extends Record<string, any>> = Omit<StoreSeparateC
  * ```
  */
 export declare function storeStateful<O extends Record<string, any> = Record<string, any>>(defaults: O, useState: UseState, configuration?: Options<O>): O;
-export {};

@@ -1,8 +1,10 @@
 import { storeSeparate, StoreSeparateConfig } from '..'
 import type { Keys } from '../types'
 
-type SetState<T> = (value: T) => void
-type UseState = <T>(value: T) => [T, SetState<T>]
+/** Basic signature for React setState function */
+export type SetState<T> = (value: T) => void
+/** Basic signature for React useState function */
+export type UseState = <T>(value: T) => [T, SetState<T>]
 
 function keyInObject<O extends Record<string, any>>(
   key: string,
