@@ -1,5 +1,6 @@
 import type { Keys } from './types';
 export { default as Validations } from './validations';
+export * as factories from './factories';
 /**
  * Configuration options used between both storeObject and storeSeparate
  */

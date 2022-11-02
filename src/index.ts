@@ -1,6 +1,7 @@
 import type { Keys } from './types'
 
 export { default as Validations } from './validations'
+export * as factories from './factories'
 
 const setObj = (target: any, newObj: Readonly<any>) =>
   Object.entries(newObj).forEach(([k, v]) => (target[k] = v))
@@ -336,7 +337,7 @@ export function storeObject<
 
   // Update localStorage value or read existing values
   const value = get(lsKey)
-  if (!value) {
+  if (value === null) {
     set(lsKey, checkStringify(defaults))
   } else if (partial) {
     const current = parse(value)
@@ -580,7 +581,7 @@ export function storeSeparate<
   for (const [key, value] of Object.entries(defaults) as [Keys<O>, any][]) {
     const keyPrefix = addId(key, id)
     const lsValue = get(keyPrefix)
-    if (!lsValue) {
+    if (lsValue === null) {
       set(keyPrefix, stringify(vot(key, value, 'set')))
     } else object[key] = vot(parse(lsValue), key, 'get')
   }
