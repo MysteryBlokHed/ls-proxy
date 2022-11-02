@@ -11,120 +11,112 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./lib/validations.js":
-/*!****************************!*\
-  !*** ./lib/validations.js ***!
-  \****************************/
-/***/ ((__unused_webpack_module, exports) => {
+/***/ "./lib/factories/index.js":
+/*!********************************!*\
+  !*** ./lib/factories/index.js ***!
+  \********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-/** Validations meant to be used with `storeObject`'s validate function */
-var Validations;
-(function (Validations) {
-    /**
-     * Validate that only expected keys are present on an object
-     *
-     * @param value The unknown value to validate types of
-     * @param requiredKeys The **only** keys that should be present
-     * @template O The stored object
-     *
-     * @example
-     * ```typescript
-     * import { storeObject, Validations } from 'ls-proxy'
-     *
-     * const myObj = storeObject(
-     *   'myObj',
-     *   { foo: 'bar' },
-     *   { validate: value => Validations.keys(value, ['foo']) },
-     * )
-     *
-     * myObj.foo = 'abc' // no error
-     * myObj.bar = 'xyz' // error
-     * ```
-     */
-    Validations.keys = (value, requiredKeys) => Object.keys(value).every(key => requiredKeys.includes(key)) &&
-        requiredKeys.every(key => key in value);
-    /**
-     * Validate that the types passed for an object are expected
-     *
-     * @param value The unknown value to validate types of
-     * @param typesMap A map of expected keys for an object to expected types, checked like `typeof value[key] === typesMap[key]`
-     * @template O The stored object
-     * @example
-     * ```typescript
-     * import { storeObject, Validations } from 'ls-proxy'
-     *
-     * const typesMap = {
-     *   onlyString: 'string',
-     *   onlyNumber: 'number',
-     * }
-     *
-     * const runtimeCheckedTypes = storeObject(
-     *   'runtimeCheckedTypes',
-     *   {
-     *     onlyString: 'abc',
-     *     onlyNumber: 123,
-     *   },
-     *   { validate: value => Validations.types(value, typesMap) },
-     * )
-     *
-     * runtimeCheckedTypes.onlyString = 'xyz' // Succeeds
-     * runtimeCheckedTypes.onlyNumber = 'abc' // Fails
-     * ```
-     */
-    Validations.types = (value, typesMap) => Object.entries(value).every(([key, value]) => typeof value === typesMap[key]);
-})(Validations || (Validations = {}));
-exports["default"] = Validations;
+exports.react = void 0;
+exports.react = __webpack_require__(/*! ./react */ "./lib/factories/react.js");
 
 
-/***/ })
+/***/ }),
 
-/******/ 	});
-/************************************************************************/
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
-/******/ 		if (cachedModule !== undefined) {
-/******/ 			return cachedModule.exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/ 	
-/************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
-(() => {
-var exports = __webpack_exports__;
+/***/ "./lib/factories/react.js":
+/*!********************************!*\
+  !*** ./lib/factories/react.js ***!
+  \********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.storeStateful = void 0;
+const __1 = __webpack_require__(/*! .. */ "./lib/index.js");
+function keyInObject(key, object) {
+    if (!(key in object)) {
+        throw new TypeError(`${key} was not passed in defaults object`);
+    }
+}
+/**
+ * Store multiple separate values in state that are automatically updated
+ * @param defaults The defaults values if they are undefined
+ * @param useState React's `useState` function, passed as-is
+ * @param configuration Config options
+ * @template O The stored object
+ *
+ * @example
+ * ```tsx
+ * import { storeStateful } from 'ls-proxy/factories/react'
+ * import { useState } from 'react'
+ *
+ * const MyComponent = () => {
+ *   const state = storeStateful({ count: 0 }, useState)
+ *
+ *   // When this button is clicked, the count is incremented and state is upgraded
+ *   // The button's contents are read from state
+ *   return <button onClick={() => state.count++}>{state.count}</button>
+ * }
+ * ```
+ */
+function storeStateful(defaults, useState, configuration = {}) {
+    /** Current values */
+    const object = {};
+    /** setState functions */
+    const stateFunctions = {};
+    // Iterate over keys of defaults object
+    for (const key of Object.keys(defaults).sort()) {
+        // Save current value and setState method in separate objects
+        ;
+        [object[key], stateFunctions[key]] = useState(defaults[key]);
+    }
+    /** State proxy object */
+    const state = (0, __1.storeSeparate)(object, Object.assign(Object.assign({}, configuration), { checkGets: false, checkDefaults: false, 
+        // Call useState for relevant key on set
+        set(key, value) {
+            keyInObject(key, object);
+            stateFunctions[key](value);
+            object[key] = value;
+        }, 
+        // Should never be called due to config
+        get: () => null, 
+        // Don't parse anything since raw object is stored
+        parse: value => value, 
+        // Stringify and reparse if it's an object to remove the proxy while storing
+        // Fixes React not rerendering on array/object changes
+        stringify(value) {
+            if (typeof value === 'object')
+                return JSON.parse(JSON.stringify(value));
+            return value;
+        } }));
+    return state;
+}
+exports.storeStateful = storeStateful;
+
+
+/***/ }),
+
+/***/ "./lib/index.js":
 /*!**********************!*\
   !*** ./lib/index.js ***!
   \**********************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.storeSeparate = exports.storeObject = exports.Validations = void 0;
+exports.storeSeparate = exports.storeObject = exports.Factories = exports.Validations = void 0;
 var validations_1 = __webpack_require__(/*! ./validations */ "./lib/validations.js");
 Object.defineProperty(exports, "Validations", ({ enumerable: true, get: function () { return validations_1.default; } }));
+exports.Factories = __webpack_require__(/*! ./factories */ "./lib/factories/index.js");
 const setObj = (target, newObj) => Object.entries(newObj).forEach(([k, v]) => (target[k] = v));
 /**
  * Fill in default values for CommonConfig
  */
-const commonDefaults = ({ checkGets, set, get, parse, stringify, }) => ({
+const commonDefaults = ({ checkGets, checkDefaults, set, get, parse, stringify, }) => ({
     checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
+    checkDefaults: checkDefaults !== null && checkDefaults !== void 0 ? checkDefaults : true,
     set: set !== null && set !== void 0 ? set : ((key, value) => (localStorage[key] = value)),
     get: get !== null && get !== void 0 ? get : (value => { var _a; return (_a = localStorage[value]) !== null && _a !== void 0 ? _a : null; }),
     parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
@@ -291,7 +283,7 @@ const validOrThrow = (validate, modify, object, action, lsKey) => {
  * ```
  */
 function storeObject(lsKey, defaults, configuration = {}) {
-    const { checkGets, partial, set, get, validate, modify, parse, stringify } = defaultStoreObjectConfig(configuration);
+    const { checkGets, checkDefaults, partial, set, get, validate, modify, parse, stringify, } = defaultStoreObjectConfig(configuration);
     /** Call validOrThrow with relevant parameters by default */
     const vot = (value, action = 'set') => validOrThrow(validate, modify, value, action, lsKey);
     const checkParse = (value) => {
@@ -316,18 +308,20 @@ function storeObject(lsKey, defaults, configuration = {}) {
     };
     let object = Object.assign({}, defaults);
     // Update localStorage value or read existing values
-    const value = get(lsKey);
-    if (!value) {
-        set(lsKey, checkStringify(defaults));
-    }
-    else if (partial) {
-        const current = parse(value);
-        object = filterWanted(current);
-        const validModified = vot(object);
-        set(lsKey, stringify(Object.assign(Object.assign({}, current), validModified)));
-    }
-    else {
-        object = checkParse(value);
+    if (checkDefaults) {
+        const value = get(lsKey);
+        if (value === null) {
+            set(lsKey, checkStringify(defaults));
+        }
+        else if (partial) {
+            const current = parse(value);
+            object = filterWanted(current);
+            const validModified = vot(object);
+            set(lsKey, stringify(Object.assign(Object.assign({}, current), validModified)));
+        }
+        else {
+            object = checkParse(value);
+        }
     }
     /** Proxy handler for the main object */
     const proxyHandler = {
@@ -362,7 +356,7 @@ function storeObject(lsKey, defaults, configuration = {}) {
     return new Proxy(object, proxyHandler);
 }
 exports.storeObject = storeObject;
-const defaultStoreSeparateConfig = ({ id, checkGets, set, get, validate, modify, parse, stringify, }) => (Object.assign({ id, validate: validate !== null && validate !== void 0 ? validate : (() => true), modify: modify !== null && modify !== void 0 ? modify : (value => value) }, commonDefaults({ checkGets, set, get, parse, stringify })));
+const defaultStoreSeparateConfig = ({ id, checkGets, checkDefaults, set, get, validate, modify, parse, stringify, }) => (Object.assign({ id, validate: validate !== null && validate !== void 0 ? validate : (() => true), modify: modify !== null && modify !== void 0 ? modify : (value => value) }, commonDefaults({ checkGets, checkDefaults, set, get, parse, stringify })));
 /**
  * Validate and modify a value
  *
@@ -464,19 +458,21 @@ const validOrThrowSeparate = (validate, modify, object, action, key) => {
  * ```
  */
 function storeSeparate(defaults, configuration = {}) {
-    const { id, checkGets, set, get, validate, modify, parse, stringify } = defaultStoreSeparateConfig(configuration);
+    const { id, checkGets, checkDefaults, set, get, validate, modify, parse, stringify, } = defaultStoreSeparateConfig(configuration);
     const object = Object.assign({}, defaults);
     /** Call validOrThrow with relevant parameters by default */
     const vot = (key, value, action) => validOrThrowSeparate(validate, modify, { [key]: value }, action, key)[key];
     // Set defaults
-    for (const [key, value] of Object.entries(defaults)) {
-        const keyPrefix = addId(key, id);
-        const lsValue = get(keyPrefix);
-        if (!lsValue) {
-            set(keyPrefix, stringify(vot(key, value, 'set')));
+    if (checkDefaults) {
+        for (const [key, value] of Object.entries(defaults)) {
+            const keyPrefix = addId(key, id);
+            const lsValue = get(keyPrefix);
+            if (lsValue === null) {
+                set(keyPrefix, stringify(vot(key, value, 'set')));
+            }
+            else
+                object[key] = vot(parse(lsValue), key, 'get');
         }
-        else
-            object[key] = vot(parse(lsValue), key, 'get');
     }
     return new Proxy(object, {
         set(target, key, value) {
@@ -502,8 +498,111 @@ function storeSeparate(defaults, configuration = {}) {
 exports.storeSeparate = storeSeparate;
 const addId = (key, id) => id ? `${id}.${key}` : key;
 
-})();
 
-window.LSProxy = __webpack_exports__;
+/***/ }),
+
+/***/ "./lib/validations.js":
+/*!****************************!*\
+  !*** ./lib/validations.js ***!
+  \****************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+/** Validations meant to be used with `storeObject`'s validate function */
+var Validations;
+(function (Validations) {
+    /**
+     * Validate that only expected keys are present on an object
+     *
+     * @param value The unknown value to validate types of
+     * @param requiredKeys The **only** keys that should be present
+     * @template O The stored object
+     *
+     * @example
+     * ```typescript
+     * import { storeObject, Validations } from 'ls-proxy'
+     *
+     * const myObj = storeObject(
+     *   'myObj',
+     *   { foo: 'bar' },
+     *   { validate: value => Validations.keys(value, ['foo']) },
+     * )
+     *
+     * myObj.foo = 'abc' // no error
+     * myObj.bar = 'xyz' // error
+     * ```
+     */
+    Validations.keys = (value, requiredKeys) => Object.keys(value).every(key => requiredKeys.includes(key)) &&
+        requiredKeys.every(key => key in value);
+    /**
+     * Validate that the types passed for an object are expected
+     *
+     * @param value The unknown value to validate types of
+     * @param typesMap A map of expected keys for an object to expected types, checked like `typeof value[key] === typesMap[key]`
+     * @template O The stored object
+     * @example
+     * ```typescript
+     * import { storeObject, Validations } from 'ls-proxy'
+     *
+     * const typesMap = {
+     *   onlyString: 'string',
+     *   onlyNumber: 'number',
+     * }
+     *
+     * const runtimeCheckedTypes = storeObject(
+     *   'runtimeCheckedTypes',
+     *   {
+     *     onlyString: 'abc',
+     *     onlyNumber: 123,
+     *   },
+     *   { validate: value => Validations.types(value, typesMap) },
+     * )
+     *
+     * runtimeCheckedTypes.onlyString = 'xyz' // Succeeds
+     * runtimeCheckedTypes.onlyNumber = 'abc' // Fails
+     * ```
+     */
+    Validations.types = (value, typesMap) => Object.entries(value).every(([key, value]) => typeof value === typesMap[key]);
+})(Validations || (Validations = {}));
+exports["default"] = Validations;
+
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __webpack_require__("./lib/index.js");
+/******/ 	window.LSProxy = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;

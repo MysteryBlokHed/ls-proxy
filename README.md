@@ -1,14 +1,17 @@
 # ls-proxy [![Build Badge]](https://gitlab.com/MysteryBlokHed/ls-proxy/-/pipelines) [![NPM Badge]](https://www.npmjs.com/package/ls-proxy) [![License Badge]](#license)
 
-Wrapper around localStorage to easily store JSON objects.
+Wrapper around localStorage (**[and other stores](#custom-stores)**) to easily store JSON objects.
 
 Supports:
 
 - Storing any type that can be serialized
 - Runtime valdiation (eg. type checking)
 - Deeply nested objects
+- Defining custom stores other than localStorage
 
 ## Why to use?
+
+### For localStorage
 
 If you want to store client-side data for your website, the way to do it is with localStorage.
 However, there is at least one siginificant downside: you can only store strings in localStorage keys.
@@ -65,6 +68,76 @@ someInfo.aNumber = 42 // Updates localStorage
 console.log(someInfo.aList) // Reads from localStorage
 ```
 
+### For other stores
+
+If you have any value stored in a store that requires some extra action to trigger an update,
+then using ls-proxy to create a custom store is a good option.
+One example of this is React (and many other frontend UI's) state, which has to be updated by calling
+a `setState` function instead of just mutating the value returned.
+When using `ls-proxy`, state will be updated even if deeply nested objects' keys are modified.
+
+You can override the `get` and `set` methods to automatically set/retrieve values from your other store:
+
+```typescript
+import { storeSeparate } from 'ls-proxy'
+
+const myObj = storeSeparate({ foo: 'bar' },
+{
+  get(key) {
+    // Logic to get a key here
+  }
+
+  set(key, value) {
+    // Logic to set a key here
+  }
+
+  // Important!!
+  // If your store only accepts strings, then don't override this method
+  // If it accepts other values such as objects, then override it as shown
+  // This makes sure that the proxy created by ls-proxy isn't accidentally stored,
+  // which could cause a lot of very painful-to-find bugs
+  stringify(value) {
+    if (typeof value == 'object') return JSON.parse(JSON.stringify(value))
+    return value
+  }
+})
+```
+
+#### Making a resuable function
+
+To make a function to construct these objects, it's a good idea to still let the user pass in config options.
+You can copy the signature from `storeObject` or `storeSeparate` as long as it's credited as described
+by the project's licenses.
+
+Here's an example:
+
+```typescript
+import { storeSeparate, StoreSeparateOptions } from 'ls-proxy'
+
+// The options for your store function
+// This should extend the original function's options, omitting those that your function overrides
+type Options<O extends Record<string, any>> = Omit<
+  StoreSeparateOptions<O>,
+  'get' | 'set'
+>
+
+function storeCustom<O extends Record<string, any>>(
+  defaults: O,
+  configuration: Options<O>,
+): O {
+  return storeSeparate(defaults, {
+    ...configuration,
+    get(key) {
+      // Logic to get a key here
+    },
+
+    set(key, value) {
+      // Logic to set a key here
+    },
+  })
+}
+```
+
 ## Documentation
 
 Documentation for the main branch is hosted at <https://ls-proxy.adamts.me>.
@@ -81,6 +154,18 @@ For example, if you want to use `validate` and `modify` (see documentation for c
 and you need the entire object for context.
 This can be the case if you need another key's value to validate the object,
 or if you want to modify multiple keys with a single set/get.
+
+## Custom stores
+
+Because of the customization offered in the options of `storeObject` and `storeSeparate`,
+it's possible to define custom stores other than localStorage.
+
+These can be made by overriding the `get` and `set` methods via the config options.
+There are some custom stores already built in in the `factories` subfolder:
+
+- React State (`ls-proxy/factories/react`)
+
+See [For other stores](#for-other-stores) for a brief explanation about how to set one up.
 
 ## Use
 

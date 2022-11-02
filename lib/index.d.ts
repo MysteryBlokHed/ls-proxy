@@ -1,5 +1,6 @@
 import type { Keys } from './types';
 export { default as Validations } from './validations';
+export * as Factories from './factories';
 /**
  * Configuration options used between both storeObject and storeSeparate
  */
@@ -9,6 +10,11 @@ interface CommonConfig {
      * @default true
      */
     checkGets?: boolean;
+    /**
+     * Whether or not to look for existing values before using the defaults passed
+     * @default true
+     */
+    checkDefaults?: boolean;
     /**
      * Called whenever a key should be set
      * @param value The value being set

@@ -1,6 +1,7 @@
 import type { Keys } from './types'
 
 export { default as Validations } from './validations'
+export * as Factories from './factories'
 
 const setObj = (target: any, newObj: Readonly<any>) =>
   Object.entries(newObj).forEach(([k, v]) => (target[k] = v))
@@ -14,6 +15,11 @@ interface CommonConfig {
    * @default true
    */
   checkGets?: boolean
+  /**
+   * Whether or not to look for existing values before using the defaults passed
+   * @default true
+   */
+  checkDefaults?: boolean
 
   /**
    * Called whenever a key should be set
@@ -46,12 +52,14 @@ interface CommonConfig {
  */
 const commonDefaults = ({
   checkGets,
+  checkDefaults,
   set,
   get,
   parse,
   stringify,
 }: CommonConfig): Required<CommonConfig> => ({
   checkGets: checkGets ?? true,
+  checkDefaults: checkDefaults ?? true,
   set: set ?? ((key, value) => (localStorage[key] = value)),
   get: get ?? (value => localStorage[value] ?? null),
   parse: parse ?? JSON.parse,
@@ -300,8 +308,17 @@ const validOrThrow = <O extends Record<string, any>>(
 export function storeObject<
   O extends Record<string, any> = Record<string, any>,
 >(lsKey: string, defaults: O, configuration: StoreObjectConfig<O> = {}): O {
-  const { checkGets, partial, set, get, validate, modify, parse, stringify } =
-    defaultStoreObjectConfig(configuration)
+  const {
+    checkGets,
+    checkDefaults,
+    partial,
+    set,
+    get,
+    validate,
+    modify,
+    parse,
+    stringify,
+  } = defaultStoreObjectConfig(configuration)
 
   /** Call validOrThrow with relevant parameters by default */
   const vot = (value: any, action: 'get' | 'set' = 'set') =>
@@ -335,17 +352,19 @@ export function storeObject<
   let object = { ...defaults } as O
 
   // Update localStorage value or read existing values
-  const value = get(lsKey)
-  if (!value) {
-    set(lsKey, checkStringify(defaults))
-  } else if (partial) {
-    const current = parse(value)
-    object = filterWanted(current)
+  if (checkDefaults) {
+    const value = get(lsKey)
+    if (value === null) {
+      set(lsKey, checkStringify(defaults))
+    } else if (partial) {
+      const current = parse(value)
+      object = filterWanted(current)
 
-    const validModified = vot(object)
-    set(lsKey, stringify({ ...current, ...validModified }))
-  } else {
-    object = checkParse(value)
+      const validModified = vot(object)
+      set(lsKey, stringify({ ...current, ...validModified }))
+    } else {
+      object = checkParse(value)
+    }
   }
 
   /** Proxy handler for the main object */
@@ -435,6 +454,7 @@ export interface StoreSeparateConfig<O extends Record<string, any>>
 const defaultStoreSeparateConfig = <O extends Record<string, any>>({
   id,
   checkGets,
+  checkDefaults,
   set,
   get,
   validate,
@@ -446,7 +466,7 @@ const defaultStoreSeparateConfig = <O extends Record<string, any>>({
   id,
   validate: validate ?? (() => true),
   modify: modify ?? (value => value),
-  ...commonDefaults({ checkGets, set, get, parse, stringify }),
+  ...commonDefaults({ checkGets, checkDefaults, set, get, parse, stringify }),
 })
 
 /**
@@ -562,8 +582,17 @@ const validOrThrowSeparate = <O extends Record<string, any>>(
 export function storeSeparate<
   O extends Record<string, any> = Record<string, any>,
 >(defaults: O, configuration: StoreSeparateConfig<O> = {}): O {
-  const { id, checkGets, set, get, validate, modify, parse, stringify } =
-    defaultStoreSeparateConfig(configuration)
+  const {
+    id,
+    checkGets,
+    checkDefaults,
+    set,
+    get,
+    validate,
+    modify,
+    parse,
+    stringify,
+  } = defaultStoreSeparateConfig(configuration)
   const object = { ...defaults } as O
 
   /** Call validOrThrow with relevant parameters by default */
@@ -577,12 +606,14 @@ export function storeSeparate<
     )[key]!
 
   // Set defaults
-  for (const [key, value] of Object.entries(defaults) as [Keys<O>, any][]) {
-    const keyPrefix = addId(key, id)
-    const lsValue = get(keyPrefix)
-    if (!lsValue) {
-      set(keyPrefix, stringify(vot(key, value, 'set')))
-    } else object[key] = vot(parse(lsValue), key, 'get')
+  if (checkDefaults) {
+    for (const [key, value] of Object.entries(defaults) as [Keys<O>, any][]) {
+      const keyPrefix = addId(key, id)
+      const lsValue = get(keyPrefix)
+      if (lsValue === null) {
+        set(keyPrefix, stringify(vot(key, value, 'set')))
+      } else object[key] = vot(parse(lsValue), key, 'get')
+    }
   }
 
   return new Proxy(object, {
