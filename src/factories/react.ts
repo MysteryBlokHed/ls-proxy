@@ -77,7 +77,7 @@ export function storeStateful<
     // Stringify and reparse if it's an object to remove the proxy while storing
     // Fixes React not rerendering on array/object changes
     stringify(value) {
-      if (typeof value == 'object') return JSON.parse(JSON.stringify(value))
+      if (typeof value === 'object') return JSON.parse(JSON.stringify(value))
       return value
     },
   })
