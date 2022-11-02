@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added factory functions for custom stores as well as documentation about them
   (the ones that exist and how to make them)
 
+### Fixed
+
+- Updated dependency on terser to non-vulnerable version
+
 ## 0.5.1
 
 ### Fixed
