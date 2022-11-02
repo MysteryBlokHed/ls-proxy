@@ -103,6 +103,41 @@ const myObj = storeSeparate({ foo: 'bar' },
 })
 ```
 
+#### Making a resuable function
+
+To make a function to construct these objects, it's a good idea to still let the user pass in config options.
+You can copy the signature from `storeObject` or `storeSeparate` as long as it's credited as described
+by the project's licenses.
+
+Here's an example:
+
+```typescript
+import { storeSeparate, StoreSeparateOptions } from 'ls-proxy'
+
+// The options for your store function
+// This should extend the original function's options, omitting those that your function overrides
+type Options<O extends Record<string, any>> = Omit<
+  StoreSeparateOptions<O>,
+  'get' | 'set'
+>
+
+function storeCustom<O extends Record<string, any>>(
+  defaults: O,
+  configuration: Options<O>,
+): O {
+  return storeSeparate(defaults, {
+    ...configuration,
+    get(key) {
+      // Logic to get a key here
+    },
+
+    set(key, value) {
+      // Logic to set a key here
+    },
+  })
+}
+```
+
 ## Documentation
 
 Documentation for the main branch is hosted at <https://ls-proxy.adamts.me>.
