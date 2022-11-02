@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        ls-proxy
 // @descripton  Wrapper around localStorage to easily store JSON objects
-// @version     0.12.0
+// @version     0.5.1
 // @author      Adam Thompson-Sharpe
 // @license     MIT OR Apache-2.0
 // @homepageURL https://gitlab.com/MysteryBlokHed/ls-proxy
@@ -51,9 +51,8 @@ function storeStateful(defaults, useState, configuration = {}) {
         ;
         [object[key], stateFunctions[key]] = useState(defaults[key]);
     }
-    console.log(object, stateFunctions);
     /** State proxy object */
-    const state = (0, __1.storeSeparate)(object, {
+    const state = (0, __1.storeSeparate)(object, Object.assign(Object.assign({}, configuration), { checkGets: false, checkDefaults: false, 
         // Call useState for relevant key on set
         set(key, value) {
             keyInObject(key, object);
@@ -63,17 +62,16 @@ function storeStateful(defaults, useState, configuration = {}) {
         // Return current value from original object
         get(key) {
             return object[key];
-        },
+        }, 
         // Don't parse anything since raw object is stored
-        parse: value => value,
+        parse: value => value, 
         // Stringify and reparse if it's an object to remove the proxy while storing
         // Fixes React not rerendering on array/object changes
         stringify(value) {
             if (typeof value == 'object')
                 return JSON.parse(JSON.stringify(value));
             return value;
-        },
-    });
+        } }));
     return state;
 }
 exports.storeStateful = storeStateful;
@@ -89,16 +87,17 @@ exports.storeStateful = storeStateful;
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.storeSeparate = exports.storeObject = exports.factories = exports.Validations = void 0;
+exports.storeSeparate = exports.storeObject = exports.Factories = exports.Validations = void 0;
 var validations_1 = __webpack_require__(/*! ./validations */ "./lib/validations.js");
 Object.defineProperty(exports, "Validations", ({ enumerable: true, get: function () { return validations_1.default; } }));
-exports.factories = __webpack_require__(/*! ./factories */ "./lib/factories/index.js");
+exports.Factories = __webpack_require__(/*! ./factories */ "./lib/factories/index.js");
 const setObj = (target, newObj) => Object.entries(newObj).forEach(([k, v]) => (target[k] = v));
 /**
  * Fill in default values for CommonConfig
  */
-const commonDefaults = ({ checkGets, set, get, parse, stringify, }) => ({
+const commonDefaults = ({ checkGets, checkDefaults, set, get, parse, stringify, }) => ({
     checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
+    checkDefaults: checkDefaults !== null && checkDefaults !== void 0 ? checkDefaults : true,
     set: set !== null && set !== void 0 ? set : ((key, value) => (localStorage[key] = value)),
     get: get !== null && get !== void 0 ? get : (value => { var _a; return (_a = localStorage[value]) !== null && _a !== void 0 ? _a : null; }),
     parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
@@ -265,7 +264,7 @@ const validOrThrow = (validate, modify, object, action, lsKey) => {
  * ```
  */
 function storeObject(lsKey, defaults, configuration = {}) {
-    const { checkGets, partial, set, get, validate, modify, parse, stringify } = defaultStoreObjectConfig(configuration);
+    const { checkGets, checkDefaults, partial, set, get, validate, modify, parse, stringify, } = defaultStoreObjectConfig(configuration);
     /** Call validOrThrow with relevant parameters by default */
     const vot = (value, action = 'set') => validOrThrow(validate, modify, value, action, lsKey);
     const checkParse = (value) => {
@@ -290,18 +289,20 @@ function storeObject(lsKey, defaults, configuration = {}) {
     };
     let object = Object.assign({}, defaults);
     // Update localStorage value or read existing values
-    const value = get(lsKey);
-    if (value === null) {
-        set(lsKey, checkStringify(defaults));
-    }
-    else if (partial) {
-        const current = parse(value);
-        object = filterWanted(current);
-        const validModified = vot(object);
-        set(lsKey, stringify(Object.assign(Object.assign({}, current), validModified)));
-    }
-    else {
-        object = checkParse(value);
+    if (checkDefaults) {
+        const value = get(lsKey);
+        if (value === null) {
+            set(lsKey, checkStringify(defaults));
+        }
+        else if (partial) {
+            const current = parse(value);
+            object = filterWanted(current);
+            const validModified = vot(object);
+            set(lsKey, stringify(Object.assign(Object.assign({}, current), validModified)));
+        }
+        else {
+            object = checkParse(value);
+        }
     }
     /** Proxy handler for the main object */
     const proxyHandler = {
@@ -336,7 +337,7 @@ function storeObject(lsKey, defaults, configuration = {}) {
     return new Proxy(object, proxyHandler);
 }
 exports.storeObject = storeObject;
-const defaultStoreSeparateConfig = ({ id, checkGets, set, get, validate, modify, parse, stringify, }) => (Object.assign({ id, validate: validate !== null && validate !== void 0 ? validate : (() => true), modify: modify !== null && modify !== void 0 ? modify : (value => value) }, commonDefaults({ checkGets, set, get, parse, stringify })));
+const defaultStoreSeparateConfig = ({ id, checkGets, checkDefaults, set, get, validate, modify, parse, stringify, }) => (Object.assign({ id, validate: validate !== null && validate !== void 0 ? validate : (() => true), modify: modify !== null && modify !== void 0 ? modify : (value => value) }, commonDefaults({ checkGets, checkDefaults, set, get, parse, stringify })));
 /**
  * Validate and modify a value
  *
@@ -438,19 +439,21 @@ const validOrThrowSeparate = (validate, modify, object, action, key) => {
  * ```
  */
 function storeSeparate(defaults, configuration = {}) {
-    const { id, checkGets, set, get, validate, modify, parse, stringify } = defaultStoreSeparateConfig(configuration);
+    const { id, checkGets, checkDefaults, set, get, validate, modify, parse, stringify, } = defaultStoreSeparateConfig(configuration);
     const object = Object.assign({}, defaults);
     /** Call validOrThrow with relevant parameters by default */
     const vot = (key, value, action) => validOrThrowSeparate(validate, modify, { [key]: value }, action, key)[key];
     // Set defaults
-    for (const [key, value] of Object.entries(defaults)) {
-        const keyPrefix = addId(key, id);
-        const lsValue = get(keyPrefix);
-        if (lsValue === null) {
-            set(keyPrefix, stringify(vot(key, value, 'set')));
+    if (checkDefaults) {
+        for (const [key, value] of Object.entries(defaults)) {
+            const keyPrefix = addId(key, id);
+            const lsValue = get(keyPrefix);
+            if (lsValue === null) {
+                set(keyPrefix, stringify(vot(key, value, 'set')));
+            }
+            else
+                object[key] = vot(parse(lsValue), key, 'get');
         }
-        else
-            object[key] = vot(parse(lsValue), key, 'get');
     }
     return new Proxy(object, {
         set(target, key, value) {

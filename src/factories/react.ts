@@ -15,7 +15,7 @@ function keyInObject<O extends Record<string, any>>(
 
 export type Options<O extends Record<string, any>> = Omit<
   StoreSeparateConfig<O>,
-  'checkGets' | 'parse' | 'set' | 'stringify'
+  'checkGets' | 'checkDefaults' | 'parse' | 'set' | 'stringify'
 >
 
 export function storeStateful<
@@ -32,11 +32,12 @@ export function storeStateful<
     ;[object[key], stateFunctions[key]] = useState(defaults[key])
   }
 
-  console.log(object, stateFunctions)
-
   /** State proxy object */
   const state = storeSeparate(object as O, {
     ...configuration,
+
+    checkGets: false,
+    checkDefaults: false,
 
     // Call useState for relevant key on set
     set(key, value: O[Keys<O>]) {
