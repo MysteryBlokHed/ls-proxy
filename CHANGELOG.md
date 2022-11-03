@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Configured `package.json` so that factories can be imported as shown in the docs
+- Fixed comment in documentation for `storeStateful`
 
 ## 0.6.0
 

@@ -19,8 +19,7 @@ export declare type Options<O extends Record<string, any>> = Omit<StoreSeparateC
  * const MyComponent = () => {
  *   const state = storeStateful({ count: 0 }, useState)
  *
- *   // When this button is clicked, the count is incremented and state is upgraded
- *   // The button's contents are read from state
+ *   // When this button is clicked, the count is incremented and state is updated automatically
  *   return <button onClick={() => state.count++}>{state.count}</button>
  * }
  * ```
