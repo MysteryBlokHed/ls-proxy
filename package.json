@@ -9,7 +9,8 @@
   "license": "MIT OR Apache-2.0",
   "files": [
     "lib/**/*",
-    "LICENSE",
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
     "README.md"
   ],
   "main": "lib/index.js",
