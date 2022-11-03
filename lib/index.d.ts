@@ -258,14 +258,13 @@ export interface StoreSeparateConfig<O extends Record<string, any>> extends Comm
  * const myObj = storeSeparate(
  *   { base64Value: 'foo' },
  *   {
- *     modify(value, action, key) {
- *       if (key === 'base64Value') {
- *         // Decode base64 on get
- *         if (action === 'get') value[key] = window.btoa(value[key]!)
- *         // Encode base64 on set
- *         else value[key] = window.atob(value[key]!)
- *       }
- *       return value
+ *     // Decode base64 on get
+ *     get(key) {
+ *       return window.btoa(localStorage.getItem(key)!)
+ *     },
+ *     // Encode base64 on set
+ *     set(key, value) {
+ *       localStorage.setItem(key, window.atob(value))
  *     },
  *   },
  * )
