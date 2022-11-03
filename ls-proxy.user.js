@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        ls-proxy
 // @descripton  Wrapper around localStorage (and other stores) to easily store JSON objects
-// @version     0.6.0
+// @version     0.6.1
 // @author      Adam Thompson-Sharpe
 // @license     MIT OR Apache-2.0
 // @homepageURL https://gitlab.com/MysteryBlokHed/ls-proxy
