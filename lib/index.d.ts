@@ -15,6 +15,12 @@ interface CommonConfig {
      */
     checkDefaults?: boolean;
     /**
+     * Whether to modify values on the proxied object or leave it as-is.
+     * Doesn't do anything if passed with `partial` for `storeObject`
+     * @default true
+     */
+    mutateProxiedObject?: boolean;
+    /**
      * Called whenever a key should be set
      * @param value The value being set
      * @default localStorage.setItem

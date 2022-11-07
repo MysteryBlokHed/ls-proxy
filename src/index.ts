@@ -16,6 +16,12 @@ interface CommonConfig {
    * @default true
    */
   checkDefaults?: boolean
+  /**
+   * Whether to modify values on the proxied object or leave it as-is.
+   * Doesn't do anything if passed with `partial` for `storeObject`
+   * @default true
+   */
+  mutateProxiedObject?: boolean
 
   /**
    * Called whenever a key should be set
@@ -49,6 +55,7 @@ interface CommonConfig {
 const commonDefaults = ({
   checkGets,
   checkDefaults,
+  mutateProxiedObject,
   set,
   get,
   parse,
@@ -56,6 +63,7 @@ const commonDefaults = ({
 }: CommonConfig): Required<CommonConfig> => ({
   checkGets: checkGets ?? true,
   checkDefaults: checkDefaults ?? true,
+  mutateProxiedObject: mutateProxiedObject ?? true,
   set: set ?? ((key, value) => (localStorage[key] = value)),
   get: get ?? (value => localStorage[value] ?? null),
   parse: parse ?? JSON.parse,
@@ -307,6 +315,7 @@ export function storeObject<
   const {
     checkGets,
     checkDefaults,
+    mutateProxiedObject,
     partial,
     set,
     get,
@@ -366,7 +375,9 @@ export function storeObject<
   /** Proxy handler for the main object */
   const proxyHandler: ProxyHandler<O> = {
     set(target, key: Keys<O>, value) {
-      const setResult = Reflect.set(target, key, value)
+      const setResult = mutateProxiedObject
+        ? Reflect.set(target, key, value)
+        : true
 
       if (partial) {
         const validModified = vot(target)
@@ -384,16 +395,27 @@ export function storeObject<
 
     get(target, key: Keys<O>) {
       if (checkGets) {
+        let newVal = target[key]
+
         if (partial) {
-          target[key] = vot(filterWanted(parse(get(lsKey)!), false), 'get')[key]
+          newVal = target[key] = vot(
+            filterWanted(parse(get(lsKey)!), false),
+            'get',
+          )[key]
           vot(target, 'get')
         } else {
-          target[key] = checkParse(get(lsKey)!)[key] ?? defaults[key]
+          newVal = checkParse(get(lsKey)!)[key] ?? defaults[key]
         }
 
-        if (shouldObjectProxy(target[key])) {
+        if (shouldObjectProxy(newVal)) {
           // Return a Proxy to the object to catch sets
-          return nestedProxyHandler(target, key, target[key], this.set!)
+          return nestedProxyHandler(target, key, newVal, this.set!)
+        }
+
+        if (mutateProxiedObject) {
+          target[key] = newVal
+        } else {
+          return newVal
         }
       }
 
@@ -581,6 +603,7 @@ export function storeSeparate<
     id,
     checkGets,
     checkDefaults,
+    mutateProxiedObject,
     set,
     get,
     validate,
@@ -616,19 +639,33 @@ export function storeSeparate<
       // Modify object
       const modified = vot(key, value, 'set')
       set(addId(key, id), stringify(modified))
-      return Reflect.set(target, key, modified)
+
+      if (mutateProxiedObject) {
+        return Reflect.set(target, key, modified)
+      } else {
+        return true
+      }
     },
 
     get(target, key: Keys<O>) {
+      let newVal = target[key]
+
       if (checkGets) {
         const valueUnparsed = get(addId(key, id))
-        const value = valueUnparsed ? parse(valueUnparsed) : defaults[key]
-        target[key] = vot(key, value, 'get')
+        const value =
+          valueUnparsed !== null ? parse(valueUnparsed) : defaults[key]
+        newVal = vot(key, value, 'get')
       }
 
-      if (shouldObjectProxy(target[key])) {
+      if (shouldObjectProxy(newVal)) {
         // Return a Proxy to the object to catch sets
-        return nestedProxyHandler(target, key, target[key], this.set! as any)
+        return nestedProxyHandler(target, key, newVal, this.set! as any)
+      }
+
+      if (mutateProxiedObject) {
+        target[key] = newVal
+      } else {
+        return newVal
       }
 
       return Reflect.get(target, key)

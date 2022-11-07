@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## Added
+
+- Added `mutateProxiedObject` option to `storeObject` and `storeSeparate`
+- Added a factory for SolidJS
+
 ## Changed
 
 - Removed factories re-export from `index.ts`

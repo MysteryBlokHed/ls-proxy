@@ -1,24 +1,15 @@
-import { storeSeparate, StoreSeparateConfig } from '..'
 import type { Keys } from '../types'
+import {
+  SetState,
+  SetStateFunctions,
+  Options,
+  storeReactlikeState,
+} from './common'
 
-/** Basic signature for React setState function */
-export type SetState<T> = (value: T) => void
-/** Basic signature for React useState function */
+/** Basic signature for useState function */
 export type UseState = <T>(value: T) => [T, SetState<T>]
 
-function keyInObject<O extends Record<string, any>>(
-  key: string,
-  object: O,
-): asserts key is Keys<O> {
-  if (!(key in object)) {
-    throw new TypeError(`${key} was not passed in defaults object`)
-  }
-}
-
-export type Options<O extends Record<string, any>> = Omit<
-  StoreSeparateConfig<O>,
-  'checkGets' | 'checkDefaults' | 'parse' | 'set' | 'stringify'
->
+export { Options, SetState } from './common'
 
 /**
  * Store multiple separate values in state that are automatically updated
@@ -43,43 +34,22 @@ export type Options<O extends Record<string, any>> = Omit<
 export function storeStateful<
   O extends Record<string, any> = Record<string, any>,
 >(defaults: O, useState: UseState, configuration: Options<O> = {}): O {
-  /** Current values */
-  const object: Record<string, O[Keys<O>]> = {}
-  /** setState functions */
-  const stateFunctions: Record<string, SetState<O[Keys<O>]>> = {}
+  return storeReactlikeState(
+    defaults,
+    {
+      setDefaults(defaults) {
+        const current: Partial<O> = {}
+        const stateFunctions: Partial<SetStateFunctions<O>> = {}
 
-  // Iterate over keys of defaults object
-  for (const key of Object.keys(defaults).sort() as Array<Keys<O>>) {
-    // Save current value and setState method in separate objects
-    ;[object[key], stateFunctions[key]] = useState(defaults[key])
-  }
+        // Iterate over keys of defaults object
+        for (const key of Object.keys(defaults).sort() as Array<Keys<O>>) {
+          // Save current value and setState method in separate objects
+          ;[current[key], stateFunctions[key]] = useState(defaults[key])
+        }
 
-  /** State proxy object */
-  const state = storeSeparate(object as O, {
-    ...configuration,
-
-    checkGets: false,
-    checkDefaults: false,
-
-    // Call useState for relevant key on set
-    set(key, value: O[Keys<O>]) {
-      keyInObject(key, object as O)
-      stateFunctions[key](value)
-      object[key] = value
+        return { current, stateFunctions } as any
+      },
     },
-
-    // Should never be called due to config
-    get: () => null,
-
-    // Don't parse anything since raw object is stored
-    parse: value => value,
-    // Stringify and reparse if it's an object to remove the proxy while storing
-    // Fixes React not rerendering on array/object changes
-    stringify(value) {
-      if (typeof value === 'object') return JSON.parse(JSON.stringify(value))
-      return value
-    },
-  })
-
-  return state
+    configuration,
+  )
 }

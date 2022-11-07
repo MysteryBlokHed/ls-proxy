@@ -1,9 +1,7 @@
-import { StoreSeparateConfig } from '..';
-/** Basic signature for React setState function */
-export declare type SetState<T> = (value: T) => void;
-/** Basic signature for React useState function */
+import { SetState, Options } from './common';
+/** Basic signature for useState function */
 export declare type UseState = <T>(value: T) => [T, SetState<T>];
-export declare type Options<O extends Record<string, any>> = Omit<StoreSeparateConfig<O>, 'checkGets' | 'checkDefaults' | 'parse' | 'set' | 'stringify'>;
+export { Options, SetState } from './common';
 /**
  * Store multiple separate values in state that are automatically updated
  * @param defaults The defaults values if they are undefined
