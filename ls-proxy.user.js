@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        ls-proxy
 // @descripton  Wrapper around localStorage (and other stores) to easily store JSON objects
-// @version     0.6.1
+// @version     0.9.11
 // @author      Adam Thompson-Sharpe
 // @license     MIT OR Apache-2.0
 // @homepageURL https://gitlab.com/MysteryBlokHed/ls-proxy
@@ -122,9 +122,10 @@ Object.defineProperty(exports, "Validations", ({ enumerable: true, get: function
 /**
  * Fill in default values for CommonConfig
  */
-const commonDefaults = ({ checkGets, checkDefaults, set, get, parse, stringify, }) => ({
+const commonDefaults = ({ checkGets, checkDefaults, mutateProxiedObject, set, get, parse, stringify, }) => ({
     checkGets: checkGets !== null && checkGets !== void 0 ? checkGets : true,
     checkDefaults: checkDefaults !== null && checkDefaults !== void 0 ? checkDefaults : true,
+    mutateProxiedObject: mutateProxiedObject !== null && mutateProxiedObject !== void 0 ? mutateProxiedObject : true,
     set: set !== null && set !== void 0 ? set : ((key, value) => (localStorage[key] = value)),
     get: get !== null && get !== void 0 ? get : (value => { var _a; return (_a = localStorage[value]) !== null && _a !== void 0 ? _a : null; }),
     parse: parse !== null && parse !== void 0 ? parse : JSON.parse,
@@ -291,7 +292,7 @@ const validOrThrow = (validate, modify, object, action, lsKey) => {
  * ```
  */
 function storeObject(lsKey, defaults, configuration = {}) {
-    const { checkGets, checkDefaults, partial, set, get, validate, modify, parse, stringify, } = defaultStoreObjectConfig(configuration);
+    const { checkGets, checkDefaults, mutateProxiedObject, partial, set, get, validate, modify, parse, stringify, } = defaultStoreObjectConfig(configuration);
     /** Call validOrThrow with relevant parameters by default */
     const vot = (value, action = 'set') => validOrThrow(validate, modify, value, action, lsKey);
     const checkParse = (value) => {
@@ -334,7 +335,9 @@ function storeObject(lsKey, defaults, configuration = {}) {
     /** Proxy handler for the main object */
     const proxyHandler = {
         set(target, key, value) {
-            const setResult = Reflect.set(target, key, value);
+            const setResult = mutateProxiedObject
+                ? Reflect.set(target, key, value)
+                : true;
             if (partial) {
                 const validModified = vot(target);
                 set(lsKey, stringify(Object.assign(Object.assign({}, parse(get(lsKey))), validModified)));
@@ -346,16 +349,23 @@ function storeObject(lsKey, defaults, configuration = {}) {
         get(target, key) {
             var _a;
             if (checkGets) {
+                let newVal;
                 if (partial) {
-                    target[key] = vot(filterWanted(parse(get(lsKey)), false), 'get')[key];
+                    newVal = vot(filterWanted(parse(get(lsKey)), false), 'get')[key];
                     vot(target, 'get');
                 }
                 else {
-                    target[key] = (_a = checkParse(get(lsKey))[key]) !== null && _a !== void 0 ? _a : defaults[key];
+                    newVal = (_a = checkParse(get(lsKey))[key]) !== null && _a !== void 0 ? _a : defaults[key];
                 }
-                if (shouldObjectProxy(target[key])) {
+                if (shouldObjectProxy(newVal)) {
                     // Return a Proxy to the object to catch sets
-                    return nestedProxyHandler(target, key, target[key], this.set);
+                    return nestedProxyHandler(target, key, newVal, this.set);
+                }
+                if (mutateProxiedObject) {
+                    target[key] = newVal;
+                }
+                else {
+                    return newVal;
                 }
             }
             return Reflect.get(target, key);
@@ -465,7 +475,7 @@ const validOrThrowSeparate = (validate, modify, object, action, key) => {
  * ```
  */
 function storeSeparate(defaults, configuration = {}) {
-    const { id, checkGets, checkDefaults, set, get, validate, modify, parse, stringify, } = defaultStoreSeparateConfig(configuration);
+    const { id, checkGets, checkDefaults, mutateProxiedObject, set, get, validate, modify, parse, stringify, } = defaultStoreSeparateConfig(configuration);
     const object = Object.assign({}, defaults);
     /** Call validOrThrow with relevant parameters by default */
     const vot = (key, value, action) => validOrThrowSeparate(validate, modify, { [key]: value }, action, key)[key];
@@ -486,17 +496,36 @@ function storeSeparate(defaults, configuration = {}) {
             // Modify object
             const modified = vot(key, value, 'set');
             set(addId(key, id), stringify(modified));
-            return Reflect.set(target, key, modified);
+            if (mutateProxiedObject) {
+                console.log('Proxied object not being mutated on set due to config');
+                return Reflect.set(target, key, modified);
+            }
+            else {
+                return true;
+            }
         },
         get(target, key) {
+            console.log('Proxy get called');
+            let newVal;
             if (checkGets) {
+                console.log('Checking gets');
                 const valueUnparsed = get(addId(key, id));
-                const value = valueUnparsed ? parse(valueUnparsed) : defaults[key];
-                target[key] = vot(key, value, 'get');
+                const value = valueUnparsed !== null ? parse(valueUnparsed) : defaults[key];
+                newVal = vot(key, value, 'get');
+                console.log('Got', newVal);
             }
-            if (shouldObjectProxy(target[key])) {
+            if (shouldObjectProxy(newVal)) {
+                console.log('Being object proxied');
                 // Return a Proxy to the object to catch sets
-                return nestedProxyHandler(target, key, target[key], this.set);
+                return nestedProxyHandler(target, key, newVal, this.set);
+            }
+            if (mutateProxiedObject) {
+                console.log('Proxied object being mutated');
+                target[key] = newVal;
+            }
+            else {
+                console.log('Proxied object not being mutated on get due to config');
+                return newVal;
             }
             return Reflect.get(target, key);
         },
