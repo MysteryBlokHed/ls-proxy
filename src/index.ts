@@ -394,7 +394,7 @@ export function storeObject<
 
     get(target, key: Keys<O>) {
       if (checkGets) {
-        let newVal
+        let newVal = target[key]
 
         if (partial) {
           newVal = vot(filterWanted(parse(get(lsKey)!), false), 'get')[key]
@@ -644,7 +644,7 @@ export function storeSeparate<
     },
 
     get(target, key: Keys<O>) {
-      let newVal
+      let newVal = target[key]
 
       if (checkGets) {
         const valueUnparsed = get(addId(key, id))
@@ -655,11 +655,11 @@ export function storeSeparate<
 
       if (shouldObjectProxy(newVal)) {
         // Return a Proxy to the object to catch sets
-        return nestedProxyHandler(target, key, newVal as any, this.set! as any)
+        return nestedProxyHandler(target, key, newVal, this.set! as any)
       }
 
       if (mutateProxiedObject) {
-        target[key] = newVal as any
+        target[key] = newVal
       } else {
         return newVal
       }
