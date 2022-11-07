@@ -7,6 +7,14 @@ export type SetState<T> = (value: T) => void
 export type SetStateFunctions<O extends Record<string, any>> = {
   [K in keyof O]: SetState<O[K]>
 }
+/**
+ * An object that contains getState functions matching the types of the provided object.
+ * This is for libraries (eg. SolidJS) where the state has to be retrieved from a function
+ * every time to work properly
+ */
+export type GetStateFunctions<O extends Record<string, any>> = {
+  [K in keyof O]: () => O[K]
+}
 
 export function keyInObject<O extends Record<string, any>>(
   key: string,

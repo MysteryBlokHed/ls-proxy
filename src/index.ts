@@ -637,7 +637,6 @@ export function storeSeparate<
       set(addId(key, id), stringify(modified))
 
       if (mutateProxiedObject) {
-        console.log('Proxied object not being mutated on set due to config')
         return Reflect.set(target, key, modified)
       } else {
         return true
@@ -645,29 +644,23 @@ export function storeSeparate<
     },
 
     get(target, key: Keys<O>) {
-      console.log('Proxy get called')
       let newVal
 
       if (checkGets) {
-        console.log('Checking gets')
         const valueUnparsed = get(addId(key, id))
         const value =
           valueUnparsed !== null ? parse(valueUnparsed) : defaults[key]
         newVal = vot(key, value, 'get')
-        console.log('Got', newVal)
       }
 
       if (shouldObjectProxy(newVal)) {
-        console.log('Being object proxied')
         // Return a Proxy to the object to catch sets
         return nestedProxyHandler(target, key, newVal as any, this.set! as any)
       }
 
       if (mutateProxiedObject) {
-        console.log('Proxied object being mutated')
         target[key] = newVal as any
       } else {
-        console.log('Proxied object not being mutated on get due to config')
         return newVal
       }
 

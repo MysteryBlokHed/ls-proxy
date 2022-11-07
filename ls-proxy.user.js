@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        ls-proxy
 // @descripton  Wrapper around localStorage (and other stores) to easily store JSON objects
-// @version     0.9.11
+// @version     0.6.1
 // @author      Adam Thompson-Sharpe
 // @license     MIT OR Apache-2.0
 // @homepageURL https://gitlab.com/MysteryBlokHed/ls-proxy
@@ -497,7 +497,6 @@ function storeSeparate(defaults, configuration = {}) {
             const modified = vot(key, value, 'set');
             set(addId(key, id), stringify(modified));
             if (mutateProxiedObject) {
-                console.log('Proxied object not being mutated on set due to config');
                 return Reflect.set(target, key, modified);
             }
             else {
@@ -505,26 +504,20 @@ function storeSeparate(defaults, configuration = {}) {
             }
         },
         get(target, key) {
-            console.log('Proxy get called');
             let newVal;
             if (checkGets) {
-                console.log('Checking gets');
                 const valueUnparsed = get(addId(key, id));
                 const value = valueUnparsed !== null ? parse(valueUnparsed) : defaults[key];
                 newVal = vot(key, value, 'get');
-                console.log('Got', newVal);
             }
             if (shouldObjectProxy(newVal)) {
-                console.log('Being object proxied');
                 // Return a Proxy to the object to catch sets
                 return nestedProxyHandler(target, key, newVal, this.set);
             }
             if (mutateProxiedObject) {
-                console.log('Proxied object being mutated');
                 target[key] = newVal;
             }
             else {
-                console.log('Proxied object not being mutated on get due to config');
                 return newVal;
             }
             return Reflect.get(target, key);
