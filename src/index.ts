@@ -3,9 +3,6 @@ import type { Keys } from './types'
 export { default as Validations } from './validations'
 export * as Factories from './factories'
 
-const setObj = (target: any, newObj: Readonly<any>) =>
-  Object.entries(newObj).forEach(([k, v]) => (target[k] = v))
-
 /**
  * Configuration options used between both storeObject and storeSeparate
  */

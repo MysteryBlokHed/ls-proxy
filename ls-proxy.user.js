@@ -109,7 +109,6 @@ exports.storeSeparate = exports.storeObject = exports.Factories = exports.Valida
 var validations_1 = __webpack_require__(/*! ./validations */ "./lib/validations.js");
 Object.defineProperty(exports, "Validations", ({ enumerable: true, get: function () { return validations_1.default; } }));
 exports.Factories = __webpack_require__(/*! ./factories */ "./lib/factories/index.js");
-const setObj = (target, newObj) => Object.entries(newObj).forEach(([k, v]) => (target[k] = v));
 /**
  * Fill in default values for CommonConfig
  */
