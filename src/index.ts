@@ -17,7 +17,8 @@ interface CommonConfig {
    */
   checkDefaults?: boolean
   /**
-   * Whether to modify values on the proxied object or leave it as-is
+   * Whether to modify values on the proxied object or leave it as-is.
+   * Doesn't do anything if passed with `partial` for `storeObject`
    * @default true
    */
   mutateProxiedObject?: boolean
@@ -397,7 +398,10 @@ export function storeObject<
         let newVal = target[key]
 
         if (partial) {
-          newVal = vot(filterWanted(parse(get(lsKey)!), false), 'get')[key]
+          newVal = target[key] = vot(
+            filterWanted(parse(get(lsKey)!), false),
+            'get',
+          )[key]
           vot(target, 'get')
         } else {
           newVal = checkParse(get(lsKey)!)[key] ?? defaults[key]

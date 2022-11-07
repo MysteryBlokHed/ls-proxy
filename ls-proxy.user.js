@@ -351,7 +351,7 @@ function storeObject(lsKey, defaults, configuration = {}) {
             if (checkGets) {
                 let newVal = target[key];
                 if (partial) {
-                    newVal = vot(filterWanted(parse(get(lsKey)), false), 'get')[key];
+                    newVal = target[key] = vot(filterWanted(parse(get(lsKey)), false), 'get')[key];
                     vot(target, 'get');
                 }
                 else {
