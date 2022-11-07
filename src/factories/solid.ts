@@ -41,7 +41,7 @@ export type Options<O extends Record<string, any>> = Omit<
  * }
  * ```
  */
-export function storeStateful<
+export function createSignalProxy<
   O extends Record<string, any> = Record<string, any>,
 >(defaults: O, createSignal: CreateSignal, configuration: Options<O> = {}): O {
   const current: Partial<GetStateFunctions<O>> = {}

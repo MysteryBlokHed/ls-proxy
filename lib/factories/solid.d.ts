@@ -25,4 +25,4 @@ export declare type Options<O extends Record<string, any>> = Omit<BaseOptions<O>
  * }
  * ```
  */
-export declare function storeStateful<O extends Record<string, any> = Record<string, any>>(defaults: O, createSignal: CreateSignal, configuration?: Options<O>): O;
+export declare function createSignalProxy<O extends Record<string, any> = Record<string, any>>(defaults: O, createSignal: CreateSignal, configuration?: Options<O>): O;

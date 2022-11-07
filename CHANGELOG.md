@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Changed
 
 - Removed factories re-export from `index.ts`
+- Renamed React factory from `storeStateful` to `useStateProxy`
 
 ## 0.6.1
 

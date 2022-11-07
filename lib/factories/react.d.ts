@@ -22,4 +22,4 @@ export { Options, SetState } from './common';
  * }
  * ```
  */
-export declare function storeStateful<O extends Record<string, any> = Record<string, any>>(defaults: O, useState: UseState, configuration?: Options<O>): O;
+export declare function useStateProxy<O extends Record<string, any> = Record<string, any>>(defaults: O, useState: UseState, configuration?: Options<O>): O;

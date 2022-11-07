@@ -1,4 +1,4 @@
-import { storeStateful } from '../lib/factories/solid'
+import { createSignalProxy } from '../lib/factories/solid'
 
 // Simulated signals
 // These all effectively have { equals: false } enabled
@@ -28,27 +28,27 @@ const resetSignals = () => {
 
 afterEach(() => resetSignals())
 
-describe('storeStateful factory for SolidJS signals', () => {
+describe('createSignalProxy factory for SolidJS signals', () => {
   it('initializes correctly', () => {
-    const stateObj = storeStateful({ foo: 'bar' }, createSignal)
+    const stateObj = createSignalProxy({ foo: 'bar' }, createSignal)
     expect(stateObj.foo).toBe('bar')
   })
 
   it('sets state on initialization', () => {
-    const stateObj = storeStateful({ foo: 'bar' }, createSignal)
+    const stateObj = createSignalProxy({ foo: 'bar' }, createSignal)
     expect(state.length).toBe(1)
     expect(state[0]).toBe('bar')
   })
 
   it('sets state on key updates', () => {
-    const stateObj = storeStateful({ foo: 'bar' }, createSignal)
+    const stateObj = createSignalProxy({ foo: 'bar' }, createSignal)
     stateObj.foo = 'baz'
     expect(state.length).toBe(1)
     expect(state[0]).toBe('baz')
   })
 
   it('works with multiple keys', () => {
-    const stateObj = storeStateful({ foo: 'abc', bar: 'def' }, createSignal)
+    const stateObj = createSignalProxy({ foo: 'abc', bar: 'def' }, createSignal)
     expect(stateObj.foo).toBe('abc')
     expect(stateObj.bar).toBe('def')
     expect(state.length).toBe(2)
@@ -63,7 +63,7 @@ describe('storeStateful factory for SolidJS signals', () => {
   })
 
   it('supports objects', () => {
-    const stateObj = storeStateful({ obj: { foo: 'bar' } }, createSignal)
+    const stateObj = createSignalProxy({ obj: { foo: 'bar' } }, createSignal)
     expect(state.length).toBe(1)
     expect(state[0]).toEqual({ foo: 'bar' })
     stateObj.obj.foo = 'baz'
@@ -72,7 +72,7 @@ describe('storeStateful factory for SolidJS signals', () => {
   })
 
   it('supports deeply nested objects', () => {
-    const stateObj = storeStateful(
+    const stateObj = createSignalProxy(
       { nested1: { nested2: { foo: 'bar' } } },
       createSignal,
     )

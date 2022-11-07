@@ -1,4 +1,4 @@
-import { storeStateful } from '../lib/factories/react'
+import { useStateProxy } from '../lib/factories/react'
 
 // Simulated state
 let stateIndex = 0
@@ -24,27 +24,27 @@ const resetState = () => {
 
 afterEach(() => resetState())
 
-describe('storeStateful factory for React state', () => {
+describe('useStateProxy factory for React state', () => {
   it('initializes correctly', () => {
-    const stateObj = storeStateful({ foo: 'bar' }, useState)
+    const stateObj = useStateProxy({ foo: 'bar' }, useState)
     expect(stateObj.foo).toBe('bar')
   })
 
   it('sets state on initialization', () => {
-    const stateObj = storeStateful({ foo: 'bar' }, useState)
+    const stateObj = useStateProxy({ foo: 'bar' }, useState)
     expect(state.length).toBe(1)
     expect(state[0]).toBe('bar')
   })
 
   it('sets state on key updates', () => {
-    const stateObj = storeStateful({ foo: 'bar' }, useState)
+    const stateObj = useStateProxy({ foo: 'bar' }, useState)
     stateObj.foo = 'baz'
     expect(state.length).toBe(1)
     expect(state[0]).toBe('baz')
   })
 
   it('works with multiple keys', () => {
-    const stateObj = storeStateful({ foo: 'abc', bar: 'def' }, useState)
+    const stateObj = useStateProxy({ foo: 'abc', bar: 'def' }, useState)
     expect(stateObj.foo).toBe('abc')
     expect(stateObj.bar).toBe('def')
     expect(state.length).toBe(2)
@@ -59,7 +59,7 @@ describe('storeStateful factory for React state', () => {
   })
 
   it('supports objects', () => {
-    const stateObj = storeStateful({ obj: { foo: 'bar' } }, useState)
+    const stateObj = useStateProxy({ obj: { foo: 'bar' } }, useState)
     expect(state.length).toBe(1)
     expect(state[0]).toEqual({ foo: 'bar' })
     stateObj.obj.foo = 'baz'
@@ -68,7 +68,7 @@ describe('storeStateful factory for React state', () => {
   })
 
   it('supports deeply nested objects', () => {
-    const stateObj = storeStateful(
+    const stateObj = useStateProxy(
       { nested1: { nested2: { foo: 'bar' } } },
       useState,
     )

@@ -31,7 +31,7 @@ export { Options, SetState } from './common'
  * }
  * ```
  */
-export function storeStateful<
+export function useStateProxy<
   O extends Record<string, any> = Record<string, any>,
 >(defaults: O, useState: UseState, configuration: Options<O> = {}): O {
   return storeReactlikeState(
