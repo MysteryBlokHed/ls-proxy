@@ -1,3 +1,4 @@
+import { addId } from './utils'
 import type { Keys } from './types'
 
 export { default as Validations } from './validations'
@@ -672,6 +673,3 @@ export function storeSeparate<
     },
   })
 }
-
-const addId = (key: string, id: string | undefined) =>
-  id ? `${id}.${key}` : key
