@@ -2,6 +2,7 @@ import { addId } from './utils'
 import type { Keys } from './types'
 
 export { default as Validations } from './validations'
+export * as GMFactory from './factories/greasemonkey'
 
 /**
  * Configuration options used between both storeObject and storeSeparate
