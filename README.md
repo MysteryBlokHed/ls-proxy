@@ -163,8 +163,11 @@ it's possible to define custom stores other than localStorage.
 These can be made by overriding the `get` and `set` methods via the config options.
 There are some custom stores already built in in the `factories` subfolder:
 
-- React State (`storeStateful` in `ls-proxy/factories/react`)
-- SolidJS Signals (`storeStateful` in `ls-proxy/factories/solid`)
+- React State for functional components (`useStateProxy` in `ls-proxy/factories/react`)
+  - Allows state to be used in a way more similar to that of class components
+    in the context of a functional component
+- SolidJS Signals (`createSignalProxy` in `ls-proxy/factories/solid`)
+  - Achieves a similar effect as the React factory
 
 See [For other stores](#for-other-stores) for a brief explanation about how to set one up.
 
