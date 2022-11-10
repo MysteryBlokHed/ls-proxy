@@ -143,7 +143,8 @@ function storeCustom<O extends Record<string, any>>(
 Documentation for the main branch is hosted at <https://ls-proxy.adamts.me>.
 Documentation can be built from a cloned repository by running `yarn doc`.
 
-Examples are located in [`examples`](https://gitlab.com/MysteryBlokHed/ls-proxy/-/tree/main/examples).
+Some examples are located in [`examples`](https://gitlab.com/MysteryBlokHed/ls-proxy/-/tree/main/examples),
+but many others are available in the JSDoc for their respective functions.
 
 ## storeObject vs storeSeparate
 

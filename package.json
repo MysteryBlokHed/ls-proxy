@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "ls-proxy",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Wrapper around localStorage (and other stores) to easily store JSON objects",
   "repository": "https://gitlab.com/MysteryBlokHed/ls-proxy",
   "homepage": "https://gitlab.com/MysteryBlokHed/ls-proxy",
