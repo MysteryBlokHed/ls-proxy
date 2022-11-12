@@ -51,4 +51,4 @@ jobs:
         run: yarn build
 
       - name: Test
-        run: '[ -d "./lib" ] && yarn test'
+        run: '[ -d "./src" ] && yarn test'

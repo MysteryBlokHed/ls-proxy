@@ -1,4 +1,4 @@
-import { storeObject, Validations } from '../lib'
+import { storeObject, Validations } from '../src'
 
 afterEach(() => localStorage.clear())
 

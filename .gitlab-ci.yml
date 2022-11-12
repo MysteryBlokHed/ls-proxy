@@ -45,7 +45,7 @@ test:
   rules:
     - changes: *changes
       exists:
-        - lib/**/*
+        - src/**/*
   script:
     - yarn test
 

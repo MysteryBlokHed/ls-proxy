@@ -1,4 +1,4 @@
-import { storeSeparate } from '../lib'
+import { storeSeparate } from '../src'
 
 afterEach(() => localStorage.clear())
 

@@ -1,4 +1,4 @@
-import { useStateProxy } from '../lib/factories/react'
+import { useStateProxy } from '../src/factories/react'
 
 // Simulated state
 let stateIndex = 0

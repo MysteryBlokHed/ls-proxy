@@ -1,4 +1,4 @@
-import { createSignalProxy } from '../lib/factories/solid'
+import { createSignalProxy } from '../src/factories/solid'
 
 // Simulated signals
 // These all effectively have { equals: false } enabled
