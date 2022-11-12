@@ -30,11 +30,11 @@ export type Options<O extends Record<string, any>> = Omit<
  *
  * @example
  * ```tsx
- * import { storeStateful } from 'ls-proxy/factories/solid'
+ * import { createSignalProxy } from 'ls-proxy/factories/solid'
  * import { createSignal } from 'solid-js'
  *
  * const MyComponent = () => {
- *   const state = storeStateful({ count: 0 }, createSignal)
+ *   const state = createSignalProxy({ count: 0 }, createSignal)
  *
  *   // When this button is clicked, the count is incremented and state is updated automatically
  *   return <button onClick={() => state.count++}>{state.count}</button>
